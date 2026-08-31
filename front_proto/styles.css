@@ -1,0 +1,115 @@
+body {
+  margin: 20px;
+  font-family: sans-serif;
+  color: black;
+  background: white;
+}
+
+.layout {
+  display: flex;
+  gap: 20px;
+}
+
+.focal-panel {
+  flex: 1;
+  border: 1px solid gray;
+  padding: 20px;
+  text-align: center;
+}
+
+.focal-name {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.focal-sub {
+  color: gray;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin: 5px;
+}
+
+.btn-present {
+  background: green;
+  color: white;
+}
+
+.btn-absent {
+  background: red;
+  color: white;
+}
+
+.btn-ghost {
+  padding: 8px 14px;
+  margin: 5px;
+}
+
+.progress-track {
+  height: 8px;
+  background: lightgray;
+  margin: 15px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: blue;
+}
+
+.roster-panel {
+  width: 280px;
+  border: 1px solid gray;
+  padding: 20px;
+}
+
+.roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.roster-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid lightgray;
+}
+
+.roster-item.is-active {
+  font-weight: bold;
+}
+
+.roster-item.is-waiting {
+  color: gray;
+}
+
+.status-present {
+  color: green;
+}
+
+.status-absent {
+  color: red;
+}
+
+.status-active {
+  color: blue;
+}
+
+.status-waiting {
+  color: gray;
+}
+
+.roster-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  border-top: 1px solid lightgray;
+  padding-top: 16px;
+}
+
+.summary-count {
+  display: block;
+  font-weight: bold;
+}

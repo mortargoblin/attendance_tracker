@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Check</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!--
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">●</span>
+    <span class="brand-name">Attendo</span>
+  </div>
+  <div class="session-meta">
+    <span class="session-label">Attendance Check</span>
+    <span class="session-date">Monday, August 31</span>
+  </div>
+</header>
+-->
+
+<main class="layout">
+
+  <section class="focal-panel">
+    <p class="focal-eyebrow">Waiting for student to announce presence&hellip;</p>
+
+    <div class="focal-card">
+      <p class="focal-name">Aino Korhonen</p>
+      <p class="focal-sub">Student 8 of 12</p>
+    </div>
+
+    <div class="focal-actions">
+      <button type="button" class="btn btn-present">Present</button>
+      <button type="button" class="btn btn-absent">Absent</button>
+    </div>
+
+    <div class="progress-track" aria-hidden="true">
+      <div class="progress-fill" style="width: 58%;"></div>
+    </div>
+
+    <div class="nav-actions">
+      <button type="button" class="btn-ghost" disabled>Next student</button>
+      <button type="button" class="btn-ghost">Finish attendance check</button>
+    </div>
+  </section>
+
+  <aside class="roster-panel">
+    <h2 class="roster-title">Roster</h2>
+    <ul class="roster-list">
+      <li class="roster-item is-present">
+        <span class="roster-name">Elias Virtanen</span>
+        <span class="status-badge status-present">Present</span>
+      </li>
+      <li class="roster-item is-present">
+        <span class="roster-name">Sofia Mäkinen</span>
+        <span class="status-badge status-present">Present</span>
+      </li>
+      <li class="roster-item is-absent">
+        <span class="roster-name">Leevi Nieminen</span>
+        <span class="status-badge status-absent">Absent</span>
+      </li>
+      <li class="roster-item is-present">
+        <span class="roster-name">Emma Laine</span>
+        <span class="status-badge status-present">Present</span>
+      </li>
+      <li class="roster-item is-present">
+        <span class="roster-name">Onni Heikkinen</span>
+        <span class="status-badge status-present">Present</span>
+      </li>
+      <li class="roster-item is-absent">
+        <span class="roster-name">Venla Koskinen</span>
+        <span class="status-badge status-absent">Absent</span>
+      </li>
+      <li class="roster-item is-present">
+        <span class="roster-name">Väinö Järvinen</span>
+        <span class="status-badge status-present">Present</span>
+      </li>
+      <li class="roster-item is-active">
+        <span class="roster-name">Aino Korhonen</span>
+        <span class="status-badge status-active">Announcing&hellip;</span>
+      </li>
+      <li class="roster-item is-waiting">
+        <span class="roster-name">Eetu Salminen</span>
+        <span class="status-badge status-waiting">Waiting</span>
+      </li>
+      <li class="roster-item is-waiting">
+        <span class="roster-name">Iida Hämäläinen</span>
+        <span class="status-badge status-waiting">Waiting</span>
+      </li>
+      <li class="roster-item is-waiting">
+        <span class="roster-name">Kasper Lehtonen</span>
+        <span class="status-badge status-waiting">Waiting</span>
+      </li>
+      <li class="roster-item is-waiting">
+        <span class="roster-name">Nea Anttila</span>
+        <span class="status-badge status-waiting">Waiting</span>
+      </li>
+    </ul>
+
+    <div class="roster-summary">
+      <div class="summary-stat">
+        <span class="summary-count">5</span>
+        <span class="summary-label">Present</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-count">2</span>
+        <span class="summary-label">Absent</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-count">4</span>
+        <span class="summary-label">Waiting</span>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+</body>
+</html>
