@@ -26,7 +26,9 @@ jobs:
           cache: maven
 
       - name: Run tests with JaCoCo (fails if coverage is below the pom.xml thresholds)
-        run: ./mvnw --batch-mode verify
+        run: |
+          chmod +x mvnw
+          ./mvnw --batch-mode verify
 
       - name: Print coverage summary
         if: always()
