@@ -1,6 +1,6 @@
-// Fake database (localStorage) + auth session (sessionStorage), standing in
-// for a real backend until one exists. Swap this file out once there's a
-// real API to call.
+// fake database (localstorage) + auth session (sessionstorage), standing in
+// for a real backend until one exists. swap this file out once there's a
+// real api to call.
 
 const PREFIX = "att_";
 
@@ -33,16 +33,16 @@ export function seedIfEmpty() {
 
   write("users", [teacher, ...students]);
   write("courses", [
-    { id: uid("c"), name: "Web Development 101", teacherId: teacher.id, studentIds: students.map((s) => s.id) },
-    { id: uid("c"), name: "Databases 201", teacherId: teacher.id, studentIds: [students[0].id, students[1].id] },
+    { id: uid("c"), name: "OTP", teacherId: teacher.id, studentIds: students.map((s) => s.id) },
+    { id: uid("c"), name: "Design Patterns", teacherId: teacher.id, studentIds: [students[0].id, students[1].id] },
   ]);
   write("sessions", []);
 }
 
-// Auth session lives in sessionStorage (per-tab) rather than localStorage
+// auth session lives in sessionstorage (per-tab) rather than localstorage
 // (shared per-origin) so a teacher tab and a student tab can be signed in
 // as two different users in the same browser at once, while the data above
-// still lives in localStorage so both tabs see the same courses/sessions.
+// still lives in localstorage so both tabs see the same courses/sessions.
 
 export function getSession() {
   try {

@@ -31,7 +31,7 @@ function renderHeader(user) {
   document.getElementById("header-user-name").textContent = user.name;
 }
 
-// A page's render function may return a cleanup function (e.g. to stop a
+// a page's render function may return a cleanup function (e.g. to stop a
 // polling interval); the router calls it right before leaving that page.
 let currentCleanup = null;
 
@@ -41,8 +41,8 @@ async function route() {
   const match = routes[path];
   const user = getCurrentUser();
 
-  // Unknown or empty path (including the very first load, which has no
-  // hash at all): redirect to a canonical route so the URL always matches
+  // unknown or empty path (including the very first load, which has no
+  // hash at all): redirect to a canonical route so the url always matches
   // what's on screen.
   if (!match) {
     return navigate(user ? `/${user.role}` : "/login");
