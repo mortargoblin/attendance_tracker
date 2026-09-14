@@ -1,0 +1,16 @@
+{
+  "name": "front",
+  "version": "1.0.0",
+  "description": "Frontend for the student attendance tracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./css/output.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./css/output.css --watch",
+    "serve": "npx --yes serve . -l tcp://127.0.0.1:1337"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
