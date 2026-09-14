@@ -1,4 +1,4 @@
-// Mock API — swap these functions for fetch() calls to a real backend later.
+// fake API, replace with fetch()
 
 import { read, write, uid } from "./store.js";
 
