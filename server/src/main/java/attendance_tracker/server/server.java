@@ -83,7 +83,7 @@ public final class server {
         app.post("/api/courses/{courseId}/sessions", sessionApi::start);
         app.get("/api/sessions/{sessionId}", sessionApi::get);
         app.post("/api/sessions/{sessionId}/end", sessionApi::end);
-        app.post("/api/attendance/confirm", sessionApi::confirm);
+        app.post("/api/courses/{courseId}/attendance/confirm", sessionApi::confirm);
 
         return app;
     }

@@ -428,7 +428,11 @@ class ApiTest {
         }
 
         private Res confirm(User who, String code) throws Exception {
-            return post("/api/attendance/confirm", who.token(), Map.of("code", code));
+            return confirm(who, courseId, code);
+        }
+
+        private Res confirm(User who, long course, String code) throws Exception {
+            return post("/api/courses/" + course + "/attendance/confirm", who.token(), Map.of("code", code));
         }
 
         @Test
@@ -503,9 +507,23 @@ class ApiTest {
 
             Res res = confirm(outsider, session.get("code").asText());
 
-            assertEquals(400, res.status());
-            assertEquals("That code doesn't match an active session for any of your courses.", res.error());
+            assertEquals(404, res.status());
+            assertEquals("Course not found.", res.error());
+            assertEquals(404, confirm(student, 999, session.get("code").asText()).status());
+            assertEquals(404, post("/api/courses/x/attendance/confirm", student.token(), Map.of("code", "12")).status());
             assertEquals(403, confirm(teacher, session.get("code").asText()).status());
+        }
+
+        @Test
+        void codeOnlyWorksForTheChosenCourse() throws Exception {
+            String code = start().get("code").asText();
+            long otherCourse = createCourse(teacher, "Tietokannat", student.id());
+
+            Res res = confirm(student, otherCourse, code);
+
+            assertEquals(400, res.status());
+            assertEquals("That code doesn't match an active session for this course.", res.error());
+            assertEquals(200, confirm(student, code).status());
         }
 
         @Test
@@ -513,9 +531,9 @@ class ApiTest {
             String code = start().get("code").asText();
             String wrong = code.equals("00") ? "01" : "00";
 
-            assertEquals("That code doesn't match an active session for any of your courses.", confirm(student, wrong).error());
+            assertEquals("That code doesn't match an active session for this course.", confirm(student, wrong).error());
             assertEquals("Enter the code shown on the screen.", confirm(student, "1; DROP").error());
-            assertEquals("Enter the code shown on the screen.", post("/api/attendance/confirm", student.token(), Map.of()).error());
+            assertEquals("Enter the code shown on the screen.", post("/api/courses/" + courseId + "/attendance/confirm", student.token(), Map.of()).error());
         }
 
         @Test

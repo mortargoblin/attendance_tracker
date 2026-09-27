@@ -3,16 +3,24 @@ import { escapeHtml } from "../html.js";
 
 export async function renderStudentDashboard(container) {
   container.innerHTML = `
-    <a href="#/student/confirm" class="block w-full text-center mb-6 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-      Enter attendance code
-    </a>
-    <h1 class="text-xl font-bold text-slate-900 mb-4">Your courses</h1>
+    <h1 class="text-xl font-bold text-slate-900 mb-1">Your courses</h1>
+    <p class="text-sm text-slate-500 mb-4">Pick a course to enter its attendance code.</p>
     <div id="course-list" class="space-y-3"></div>
   `;
 
   const courses = await api.listCourses();
   const list = container.querySelector("#course-list");
   list.innerHTML = courses.length
-    ? courses.map((c) => `<div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><p class="font-medium text-slate-900">${escapeHtml(c.name)}</p></div>`).join("")
+    ? courses
+        .map(
+          (c) => `
+            <a href="#/student/confirm?courseId=${encodeURIComponent(c.id)}"
+               class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-indigo-300 hover:bg-indigo-50">
+              <span class="font-medium text-slate-900">${escapeHtml(c.name)}</span>
+              <span class="shrink-0 text-sm font-medium text-indigo-600">Enter code &rarr;</span>
+            </a>
+          `
+        )
+        .join("")
     : `<p class="text-slate-500 text-sm">You're not enrolled in any courses yet.</p>`;
 }

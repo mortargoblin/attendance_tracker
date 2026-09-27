@@ -129,13 +129,15 @@ export async function getSessionStatus(sessionId) {
   return request("GET", `/api/sessions/${encodeURIComponent(sessionId)}`);
 }
 
-// student confirms attendance by typing the code shown on screen.
-// confirming twice is not an error, it just reports the original time.
+// student confirms attendance for one of their courses by typing the code
+// shown on screen. confirming twice is not an error, it just reports the
+// original time.
 // returns { courseName, confirmedAt, alreadyConfirmed }
-// throws if the code is expired or doesn't match an active session of a
-// course the student is enrolled in.
-export async function confirmAttendanceByCode(code) {
-  return request("POST", "/api/attendance/confirm", { code });
+// throws "Course not found." if the student isn't enrolled in the course, and
+// an error if the code is expired or doesn't match that course's active
+// session.
+export async function confirmAttendanceByCode(courseId, code) {
+  return request("POST", `/api/courses/${encodeURIComponent(courseId)}/attendance/confirm`, { code });
 }
 
 // teacher closes a session early so the code stops working.

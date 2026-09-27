@@ -1,9 +1,16 @@
 import * as api from "../api.js";
+import { escapeHtml } from "../html.js";
 
-export async function renderConfirm(container) {
+export async function renderConfirm(container, params) {
+  const courseId = params.get("courseId");
+  // students can only look up their own courses, so find it in that list
+  const course = (await api.listCourses()).find((c) => String(c.id) === courseId);
+  if (!course) throw new Error("Course not found.");
+
   container.innerHTML = `
-    <a href="#/student" class="text-sm text-indigo-600 hover:underline">&larr; Back</a>
+    <a href="#/student" class="text-sm text-indigo-600 hover:underline">&larr; Back to courses</a>
     <form id="confirm-form" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-4 space-y-4 text-center">
+      <p class="text-sm text-slate-500">${escapeHtml(course.name)}</p>
       <label for="code" class="text-lg font-semibold text-slate-900 block">Enter the code your teacher is showing</label>
       <input
         class="w-full max-w-[12rem] mx-auto rounded-xl border-2 border-slate-300 px-4 py-4 text-center text-4xl font-mono tracking-[0.4em]"
@@ -25,7 +32,7 @@ export async function renderConfirm(container) {
     event.preventDefault();
     message.hidden = true;
     try {
-      const result = await api.confirmAttendanceByCode(codeInput.value.padStart(2, "0"));
+      const result = await api.confirmAttendanceByCode(course.id, codeInput.value.padStart(2, "0"));
       const time = new Date(result.confirmedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       message.className = "mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700";
       message.textContent = result.alreadyConfirmed

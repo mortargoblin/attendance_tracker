@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 /**
  * Attendance sessions: POST /api/courses/{courseId}/sessions, GET /api/sessions/{sessionId},
- * POST /api/sessions/{sessionId}/end and POST /api/attendance/confirm.
+ * POST /api/sessions/{sessionId}/end and POST /api/courses/{courseId}/attendance/confirm.
  *
  * <p>A session is a row in {@code sessions}. Starting one sets starts_at to now and both ends_at
  * and code_expires_at to now + {@link #CODE_TTL}. Ending it early moves code_expires_at back to
@@ -53,7 +53,7 @@ final class SessionApi {
     static final int CODE_SPACE = 100;
 
     private static final Pattern CODE_FORMAT = Pattern.compile("[A-Za-z0-9]{1,10}");
-    private static final String NO_MATCH = "That code doesn't match an active session for any of your courses.";
+    private static final String NO_MATCH = "That code doesn't match an active session for this course.";
 
     private final ConnectionSource db;
     private final Auth auth;
@@ -128,6 +128,7 @@ final class SessionApi {
 
     void confirm(Context ctx) throws SQLException {
         Auth.Principal me = auth.require(ctx, "student");
+        long courseId = server.pathId(ctx, "courseId", "Course not found.");
         ConfirmRequest req = server.body(ctx, ConfirmRequest.class);
         String code = req.code() == null ? "" : req.code().trim();
         if (!CODE_FORMAT.matcher(code).matches()) {
@@ -136,24 +137,34 @@ final class SessionApi {
 
         LocalDateTime now = now();
         try (Connection c = db.open()) {
-            long sessionId;
+            // a course the student isn't enrolled in looks the same as a missing one
             String courseName;
-            // only sessions of courses this student is actively enrolled in can match, so a code
-            // that's live for some other course looks exactly like a wrong one
-            String sql = "SELECT s.session_id, c.name FROM sessions s "
-                    + "JOIN courses c ON c.course_id = s.course_id "
-                    + "JOIN enrollments e ON e.course_id = s.course_id AND e.student_id = ? AND e.status = 'ACTIVE' "
-                    + "WHERE s.attendance_code = ? AND s.code_expires_at > ? ORDER BY s.starts_at DESC LIMIT 1";
+            String courseSql = "SELECT c.name FROM courses c JOIN enrollments e ON e.course_id = c.course_id "
+                    + "WHERE c.course_id = ? AND e.student_id = ? AND e.status = 'ACTIVE'";
+            try (PreparedStatement ps = c.prepareStatement(courseSql)) {
+                ps.setLong(1, courseId);
+                ps.setLong(2, me.userId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        throw ApiError.notFound("Course not found.");
+                    }
+                    courseName = rs.getString("name");
+                }
+            }
+
+            long sessionId;
+            String sql = "SELECT session_id FROM sessions WHERE course_id = ? AND attendance_code = ? AND code_expires_at > ? "
+                    + "ORDER BY starts_at DESC LIMIT 1";
             try (PreparedStatement ps = c.prepareStatement(sql)) {
-                ps.setLong(1, me.userId());
+                ps.setLong(1, courseId);
                 ps.setString(2, code);
                 ps.setObject(3, now);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) {
-                        throw ApiError.badRequest(wasUsedBefore(c, me.userId(), code) ? "This code has expired." : NO_MATCH);
+                        boolean usedBefore = AuthApi.exists(c, "SELECT 1 FROM sessions WHERE course_id = ? AND attendance_code = ?", courseId, code);
+                        throw ApiError.badRequest(usedBefore ? "This code has expired." : NO_MATCH);
                     }
                     sessionId = rs.getLong("session_id");
-                    courseName = rs.getString("name");
                 }
             }
 
@@ -254,11 +265,6 @@ final class SessionApi {
                 return rs.getInt(1);
             }
         }
-    }
-
-    private static boolean wasUsedBefore(Connection c, long studentId, String code) throws SQLException {
-        return AuthApi.exists(c, "SELECT 1 FROM sessions s JOIN enrollments e ON e.course_id = s.course_id "
-                + "AND e.student_id = ? AND e.status = 'ACTIVE' WHERE s.attendance_code = ?", studentId, code);
     }
 
     /** When the student was marked present/late for the session, or null if they haven't been. */
