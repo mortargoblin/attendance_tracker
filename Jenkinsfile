@@ -154,6 +154,7 @@ pipeline {
         failure {
             echo "Build ${env.BUILD_NUMBER} failed."
             // mail to: 'team@example.com', subject: "Build #${env.BUILD_NUMBER} FAILED", body: 'See Jenkins for details.'
+            // test
         }
     }
 }
