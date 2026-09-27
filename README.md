@@ -43,9 +43,9 @@ The root `Jenkinsfile` defines a declarative pipeline with these stages:
 2. **Build** — `mvnw clean compile` in `server/`.
 3. **Unit Tests** — `mvnw test`, results published via the JUnit plugin.
 4. **Code Coverage** — `mvnw verify` runs the JaCoCo `report`/`check` goals already configured in
-   `server/pom.xml`; the HTML report is published as a Jenkins build artifact/report
-   (`server/target/site/jacoco/index.html`), and the build fails if line/branch coverage drops
-   below 75%.
+   `server/pom.xml`; results are recorded with the **JaCoCo plugin**'s `jacoco` step (trend graph
+   + per-build report under the build's sidebar), and the HTML report directory is archived as a
+   build artifact. The build fails if line/branch coverage drops below 75%.
 5. **Package** — builds the runnable fat jar and archives it.
 6. **Docker Build** — builds the `attendance-tracker-server` image from `server/Dockerfile`.
 
@@ -55,8 +55,10 @@ on Windows agents, so it works either way without needing Maven installed separa
 
 ### Setting up the Jenkins job
 
-1. Install the required Jenkins plugins: **Pipeline**, **Git**, **JUnit**, **Coverage** (or
-   **JaCoCo plugin**), **HTML Publisher**.
+1. Install the required Jenkins plugins: **Pipeline**, **Git**, **JUnit**, **JaCoCo plugin**.
+   (The pipeline uses the JaCoCo plugin's own `jacoco` step rather than the newer Coverage
+   plugin's `recordCoverage` or the HTML Publisher plugin, so it works on a minimal Jenkins
+   install — no extra reporting plugins required.)
 2. Under *Manage Jenkins → Tools*, configure:
    - a JDK installation named `jdk21` (Java 21)
    - a Maven installation named `maven3`

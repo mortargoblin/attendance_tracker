@@ -74,14 +74,16 @@ pipeline {
             }
             post {
                 always {
-                    recordCoverage tools: [[parser: 'JACOCO', pattern: 'server/target/site/jacoco/jacoco.xml']]
-                    publishHTML(target: [
-                        reportDir: 'server/target/site/jacoco',
-                        reportFiles: 'index.html',
-                        reportName: 'JaCoCo Coverage Report',
-                        keepAll: true,
-                        alwaysLinkToLastBuild: true
-                    ])
+                    // Uses the JaCoCo plugin's step (confirmed installed), instead of the
+                    // Coverage plugin's recordCoverage or HTML Publisher's publishHTML,
+                    // which may not be installed on every Jenkins instance.
+                    jacoco(
+                        execPattern: 'server/target/*.exec',
+                        classPattern: 'server/target/classes',
+                        sourcePattern: 'server/src/main/java',
+                        inclusionPattern: '**/*.class'
+                    )
+                    archiveArtifacts artifacts: 'server/target/site/jacoco/**', allowEmptyArchive: true, fingerprint: false
                 }
             }
         }
