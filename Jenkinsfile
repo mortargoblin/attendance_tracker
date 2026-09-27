@@ -19,6 +19,20 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
+    triggers {
+        // Two ways to auto-trigger a build, pick whichever fits your setup:
+        // 1) GitHub webhook (needs Jenkins reachable from the internet, e.g. via ngrok or a
+        //    public server): install the "GitHub" plugin, tick "GitHub hook trigger for
+        //    GITScm polling" in the job config, and add a webhook in the GitHub repo settings
+        //    pointing at http://<your-jenkins-url>/github-webhook/. That trigger is configured
+        //    in the job UI, not here, but this pipeline works either way.
+        // 2) SCM polling (works entirely locally, no inbound webhook needed): Jenkins checks
+        //    the repo on this schedule and starts a build only if there are new commits.
+        //    Enabled by default below - checks every 2 minutes. Comment this out if you set up
+        //    a GitHub webhook instead (option 1), so you don't build twice.
+        pollSCM('H/2 * * * *')
+    }
+
     stages {
         stage('Checkout') {
             steps {

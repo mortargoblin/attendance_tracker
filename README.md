@@ -76,8 +76,38 @@ on Windows agents, so it works either way without needing Maven installed separa
 4. Create a new **Pipeline** job (or a **Multibranch Pipeline** to build every branch/PR
    automatically), point it at this repository, and set the pipeline definition to
    *Pipeline script from SCM* using the `Jenkinsfile` at the repo root.
-5. Optionally add a GitHub webhook (or poll SCM) so pushes to `main`/`master` trigger a build
-   automatically.
+5. Set up automatic builds on new commits/releases — pick one:
+
+   **Option A — SCM polling (simplest, works for a Jenkins running on your own machine with no
+   public URL). This is already enabled in the `Jenkinsfile`'s `triggers {}` block
+   (`pollSCM('H/2 * * * *')`):**
+   - Jenkins checks the repo every 2 minutes and only actually starts a build if there are new
+     commits — so pushing a commit, or tagging/publishing a new version, triggers a build within
+     a couple of minutes without needing Jenkins to be reachable from the internet.
+   - The **first** time you create the Pipeline job in Jenkins, this trigger only takes effect
+     after the first successful build (Jenkins needs to run the `Jenkinsfile` once to discover
+     the `triggers {}` block). So click *Build Now* once manually after creating the job.
+
+   **Option B — GitHub webhook (instant trigger, needs Jenkins reachable from the internet):**
+   1. Install the **GitHub** plugin in Jenkins (Manage Jenkins → Plugins).
+   2. In the job configuration, under *Build Triggers*, tick **"GitHub hook trigger for GITScm
+      polling"**.
+   3. Make sure Jenkins is reachable from GitHub's servers at some public URL — if Jenkins runs
+      on your local machine, expose it first (e.g. `ngrok http 8080`, or port-forward + a domain).
+   4. In the GitHub repo → *Settings → Webhooks → Add webhook*, set:
+      - Payload URL: `http://<your-public-jenkins-url>/github-webhook/` (trailing slash matters)
+      - Content type: `application/json`
+      - Events: at least "Just the push event" (also enable "Releases" if you want a build
+        specifically when you publish a GitHub Release)
+   5. Push a commit (or publish a release) — GitHub calls the webhook, Jenkins starts the build
+      almost immediately instead of waiting for the next poll.
+
+   If you specifically want a build only when a **GitHub Release** is published (rather than on
+   every push), select the **"Releases"** event when creating the webhook in step 4, and add a
+   `when { triggeredBy 'GenericCause' }`/`GitHub Release` check via the **GitHub plugin**'s
+   release trigger, or simply keep pushing a `vX.Y.Z` tag and let the existing push-based trigger
+   build it — the pipeline doesn't need to know the difference, it just builds whatever commit
+   Jenkins checks out.
 
 Run it locally first to sanity-check the same commands the pipeline uses:
 
