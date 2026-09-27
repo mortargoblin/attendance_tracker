@@ -11,6 +11,72 @@ Reasoning behind the technologies: We chose to use the technologies that the lec
 
 The sample users in the SQL file have placeholder password hashes, so register new accounts to log in.
 
+## Running with Docker
+
+The backend ships with a multi-stage `server/Dockerfile` (Maven build stage + slim JRE runtime
+stage) and a `docker-compose.yml` that also spins up MariaDB and loads `attendance_tracker_v2.sql`
+automatically.
+
+```
+docker compose up -d --build
+```
+
+This starts:
+- `db` — MariaDB 11, seeded from `attendance_tracker_v2.sql`, exposed on host port `3307`.
+- `server` — the Javalin backend built from `server/Dockerfile`, exposed on host port `3000`.
+
+Then serve the frontend as usual (`cd client && npm run serve`) and open http://127.0.0.1:1337.
+
+Stop everything with `docker compose down` (add `-v` to also drop the database volume).
+
+To build just the server image (e.g. for the Jenkins pipeline):
+
+```
+docker build -t attendance-tracker-server:latest server
+```
+
+## CI/CD with Jenkins
+
+The root `Jenkinsfile` defines a declarative pipeline with these stages:
+
+1. **Checkout** — pulls the latest commit from the configured Git repository.
+2. **Build** — `mvnw clean compile` in `server/`.
+3. **Unit Tests** — `mvnw test`, results published via the JUnit plugin.
+4. **Code Coverage** — `mvnw verify` runs the JaCoCo `report`/`check` goals already configured in
+   `server/pom.xml`; the HTML report is published as a Jenkins build artifact/report
+   (`server/target/site/jacoco/index.html`), and the build fails if line/branch coverage drops
+   below 75%.
+5. **Package** — builds the runnable fat jar and archives it.
+6. **Docker Build** — builds the `attendance-tracker-server` image from `server/Dockerfile`.
+
+The pipeline uses `isUnix()` to run `sh ./mvnw ...` on Linux/macOS agents and `bat mvnw.cmd ...`
+on Windows agents, so it works either way without needing Maven installed separately on the agent
+(it uses the checked-in Maven Wrapper).
+
+### Setting up the Jenkins job
+
+1. Install the required Jenkins plugins: **Pipeline**, **Git**, **JUnit**, **Coverage** (or
+   **JaCoCo plugin**), **HTML Publisher**.
+2. Under *Manage Jenkins → Tools*, configure:
+   - a JDK installation named `jdk21` (Java 21)
+   - a Maven installation named `maven3`
+   (or edit the `tools {}` block in the `Jenkinsfile` to match names already on your instance).
+3. Make sure the Jenkins agent has Docker available (Docker Desktop with the Jenkins agent added
+   to the `docker-users` group on Windows, or mount `/var/run/docker.sock` on Linux agents) if you
+   want the **Docker Build** stage to run.
+4. Create a new **Pipeline** job (or a **Multibranch Pipeline** to build every branch/PR
+   automatically), point it at this repository, and set the pipeline definition to
+   *Pipeline script from SCM* using the `Jenkinsfile` at the repo root.
+5. Optionally add a GitHub webhook (or poll SCM) so pushes to `main`/`master` trigger a build
+   automatically.
+
+Run it locally first to sanity-check the same commands the pipeline uses:
+
+```
+cd server
+./mvnw clean verify
+```
+
 ## API
 
 All endpoints except register/login take `Authorization: Bearer <token>`. Errors are `{"error": "message"}`.

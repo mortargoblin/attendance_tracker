@@ -29,7 +29,13 @@ pipeline {
         stage('Build') {
             steps {
                 dir('server') {
-                    sh 'mvn -B -DskipTests clean compile'
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw -B -DskipTests clean compile'
+                        } else {
+                            bat 'mvnw.cmd -B -DskipTests clean compile'
+                        }
+                    }
                 }
             }
         }
@@ -37,7 +43,13 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir('server') {
-                    sh 'mvn -B test'
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw -B test'
+                        } else {
+                            bat 'mvnw.cmd -B test'
+                        }
+                    }
                 }
             }
             post {
@@ -51,7 +63,13 @@ pipeline {
             steps {
                 dir('server') {
                     // 'verify' runs the JaCoCo report + check goals bound in pom.xml
-                    sh 'mvn -B verify -DskipTests=false'
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw -B verify -DskipTests=false'
+                        } else {
+                            bat 'mvnw.cmd -B verify -DskipTests=false'
+                        }
+                    }
                 }
             }
             post {
@@ -71,7 +89,13 @@ pipeline {
         stage('Package') {
             steps {
                 dir('server') {
-                    sh 'mvn -B -DskipTests package'
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw -B -DskipTests package'
+                        } else {
+                            bat 'mvnw.cmd -B -DskipTests package'
+                        }
+                    }
                 }
             }
             post {
@@ -84,7 +108,13 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir('server') {
-                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                    script {
+                        if (isUnix()) {
+                            sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                        } else {
+                            bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% -t %IMAGE_NAME%:latest .'
+                        }
+                    }
                 }
             }
         }
