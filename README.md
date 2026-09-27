@@ -63,9 +63,16 @@ on Windows agents, so it works either way without needing Maven installed separa
    - a JDK installation named `jdk21` (Java 21)
    - a Maven installation named `maven3`
    (or edit the `tools {}` block in the `Jenkinsfile` to match names already on your instance).
-3. Make sure the Jenkins agent has Docker available (Docker Desktop with the Jenkins agent added
-   to the `docker-users` group on Windows, or mount `/var/run/docker.sock` on Linux agents) if you
-   want the **Docker Build** stage to run.
+3. The **Docker Build** stage checks whether the `docker` CLI is on `PATH` before running; if
+   it isn't found, the stage logs a warning and skips instead of failing the whole pipeline.
+   To make it actually build the image:
+   - Install Docker Desktop on the machine running the Jenkins agent.
+   - If Jenkins runs as a Windows **service** (e.g. under `LocalSystem` or a service account),
+     that service's `PATH` usually does *not* include `C:\Program Files\Docker\Docker\resources\bin`
+     even if your own user account can run `docker` in a terminal. Either add that folder to the
+     **System** `PATH` environment variable (not just the user `PATH`) and restart the Jenkins
+     service, or configure the Jenkins service to run as a user account that has Docker Desktop
+     set up, then restart the service so it picks up the new PATH.
 4. Create a new **Pipeline** job (or a **Multibranch Pipeline** to build every branch/PR
    automatically), point it at this repository, and set the pipeline definition to
    *Pipeline script from SCM* using the `Jenkinsfile` at the repo root.

@@ -112,9 +112,19 @@ pipeline {
                 dir('server') {
                     script {
                         if (isUnix()) {
-                            sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                            def dockerAvailable = sh(script: 'command -v docker', returnStatus: true) == 0
+                            if (dockerAvailable) {
+                                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                            } else {
+                                echo 'Docker CLI not found on this agent - skipping Docker Build stage.'
+                            }
                         } else {
-                            bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% -t %IMAGE_NAME%:latest .'
+                            def dockerAvailable = bat(script: 'where docker', returnStatus: true) == 0
+                            if (dockerAvailable) {
+                                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% -t %IMAGE_NAME%:latest .'
+                            } else {
+                                echo 'Docker CLI not found on this agent - skipping Docker Build stage.'
+                            }
                         }
                     }
                 }
