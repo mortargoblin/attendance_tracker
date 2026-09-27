@@ -1,4 +1,6 @@
-import { getCurrentUser, clearSession, seedIfEmpty } from "./store.js";
+import { getCurrentUser, clearSession } from "./store.js";
+import { logout } from "./api.js";
+import { escapeHtml } from "./html.js";
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
 import { renderStudentDashboard } from "./pages/student-dashboard.js";
@@ -14,8 +16,6 @@ const routes = {
   "/teacher": { render: renderTeacherDashboard, role: "teacher" },
   "/teacher/session": { render: renderTeacherSession, role: "teacher" },
 };
-
-seedIfEmpty();
 
 export function navigate(path) {
   location.hash = "#" + path;
@@ -58,10 +58,16 @@ async function route() {
   renderHeader(user);
   const app = document.getElementById("app");
   app.innerHTML = "";
-  currentCleanup = (await match.render(app, params)) || null;
+  currentCleanup = null;
+  try {
+    currentCleanup = (await match.render(app, params)) || null;
+  } catch (err) {
+    app.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">${escapeHtml(err.message)}</p>`;
+  }
 }
 
 document.getElementById("logout-btn").addEventListener("click", () => {
+  logout();
   clearSession();
   navigate("/login");
 });

@@ -1,8 +1,6 @@
 import * as api from "../api.js";
-import { getCurrentUser } from "../store.js";
 
 export async function renderConfirm(container) {
-  const user = getCurrentUser();
   container.innerHTML = `
     <a href="#/student" class="text-sm text-indigo-600 hover:underline">&larr; Back</a>
     <form id="confirm-form" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-4 space-y-4 text-center">
@@ -27,7 +25,7 @@ export async function renderConfirm(container) {
     event.preventDefault();
     message.hidden = true;
     try {
-      const result = await api.confirmAttendanceByCode(codeInput.value.padStart(2, "0"), user);
+      const result = await api.confirmAttendanceByCode(codeInput.value.padStart(2, "0"));
       const time = new Date(result.confirmedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       message.className = "mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700";
       message.textContent = result.alreadyConfirmed

@@ -18,7 +18,6 @@ export async function renderLogin(container) {
       <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Log in</button>
       <p id="message" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" hidden></p>
       <p class="text-sm text-slate-500 text-center">No account? <a class="text-indigo-600 hover:underline" href="#/register">Register</a></p>
-      <p class="text-xs text-slate-400 text-center">Demo: teacher@example.com / alex@example.com (password: password)</p>
     </form>
   `;
 

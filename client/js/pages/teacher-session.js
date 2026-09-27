@@ -1,4 +1,5 @@
 import * as api from "../api.js";
+import { escapeHtml } from "../html.js";
 
 export async function renderTeacherSession(container, params) {
   const sessionId = params.get("sessionId");
@@ -8,7 +9,7 @@ export async function renderTeacherSession(container, params) {
   container.innerHTML = `
     <a href="#/teacher" class="text-sm text-indigo-600 hover:underline">&larr; Back to courses</a>
     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-center mt-4">
-      <p class="text-slate-500 text-sm">${course.name}</p>
+      <p class="text-slate-500 text-sm">${escapeHtml(course.name)}</p>
       <p id="session-code" class="font-mono tracking-[0.3em] text-7xl font-bold text-indigo-700 my-4">--</p>
       <p id="status-line" class="text-sm text-slate-500"></p>
     </div>
@@ -51,7 +52,7 @@ export async function renderTeacherSession(container, params) {
              </span>`
           : `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">Pending</span>`;
         return `<li class="flex items-center justify-between py-2">
-                  <span class="text-sm text-slate-800">${student.name}</span>${badge}
+                  <span class="text-sm text-slate-800">${escapeHtml(student.name)}</span>${badge}
                 </li>`;
       })
       .join("");
@@ -60,14 +61,22 @@ export async function renderTeacherSession(container, params) {
   render(session);
 
   const pollHandle = setInterval(async () => {
-    const latest = await api.getSessionStatus(sessionId);
-    render(latest);
-    if (latest.status !== "active") clearInterval(pollHandle);
+    try {
+      const latest = await api.getSessionStatus(sessionId);
+      render(latest);
+      if (latest.status !== "active") clearInterval(pollHandle);
+    } catch {
+      // keep the last state on screen and try again on the next tick
+    }
   }, 2000);
 
   container.querySelector("#end-session-btn").addEventListener("click", async () => {
-    render(await api.endSession(sessionId));
-    clearInterval(pollHandle);
+    try {
+      render(await api.endSession(sessionId));
+      clearInterval(pollHandle);
+    } catch (err) {
+      alert(err.message);
+    }
   });
 
   return () => clearInterval(pollHandle);

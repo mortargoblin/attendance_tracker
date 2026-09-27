@@ -1,217 +1,146 @@
-// fake api backed by localstorage (see store.js). every exported function is
-// async and throws a plain Error("message") on failure; pages catch it and
-// show err.message to the user.
+// client for the java backend (server/). every exported function is async
+// and throws a plain Error("message") on failure; pages catch it and show
+// err.message to the user.
 //
-// to switch to a real backend: rewrite each function body to call fetch()
-// against the endpoint suggested in its comment, keep the same name, params
-// and return shape, and throw new Error(<server error message>) when the
-// response isn't ok. page code should then keep working unchanged.
-// the helpers below the imports are mock-only and can be deleted then.
+// the backend is expected on port 3000 of the same host that serves this
+// page; set window.API_BASE before the scripts load to point elsewhere.
 
-import { read, write, uid } from "./store.js";
+import { getSession, clearSession } from "./store.js";
 
-// how long a code stays valid after the teacher starts a session.
-// in a real backend this lives on the server.
-const SESSION_TTL_MS = 15 * 60 * 1000;
+const API_BASE = window.API_BASE ?? `${location.protocol}//${location.hostname}:3000`;
 
-// --- mock-only helpers (not exported) ---
+// sends a request with the login token attached and returns the parsed json
+// body (or null for an empty response). throws Error(<server message>) when
+// the response isn't ok.
+async function request(method, path, body) {
+  const headers = {};
+  const session = getSession();
+  if (session) headers.Authorization = `Bearer ${session.token}`;
+  if (body !== undefined) headers["Content-Type"] = "application/json";
 
-// strips private fields (like the password) before handing a user to pages.
-function toPublicUser(user) {
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
-}
-
-// flips an active session to "expired" once its time is up. a real server
-// would do this itself when reporting a session's status.
-function refreshExpiry(session) {
-  if (session.status === "active" && Date.now() > session.expiresAt) {
-    session.status = "expired";
+  let response;
+  try {
+    response = await fetch(API_BASE + path, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Can't reach the server. Check your connection and try again.");
   }
-  return session;
-}
 
-function randomCode() {
-  return String(Math.floor(Math.random() * 100)).padStart(2, "0");
-}
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    // non-json error page; fall through to the generic message below
+  }
 
-// picks a 2-digit code that no currently active session is using.
-function generateUniqueCode(sessions) {
-  const activeCodes = new Set(sessions.filter((s) => refreshExpiry(s).status === "active").map((s) => s.code));
-  let code = randomCode();
-  while (activeCodes.has(code)) code = randomCode();
-  return code;
+  if (!response.ok) {
+    // token expired or revoked (e.g. server restart): drop it and go log in
+    // again. login itself also answers 401, but there's no session then.
+    if (response.status === 401 && session) {
+      clearSession();
+      location.hash = "#/login";
+    }
+    throw new Error(data?.error || `Request failed (${response.status}).`);
+  }
+  return data;
 }
 
 // --- auth ---
 
 // log in with email + password.
-// real backend: POST /api/auth/login  body { email, password }
 // returns { token, user: { id, name, email, role } }
 // throws "Incorrect email or password." on bad credentials.
 export async function login({ email, password }) {
-  const user = read("users", []).find((u) => u.email.toLowerCase() === String(email).toLowerCase());
-  if (!user || user.passwordPlain !== password) {
-    throw new Error("Incorrect email or password.");
-  }
-  return { token: uid("tok"), user: toPublicUser(user) };
+  return request("POST", "/api/auth/login", { email, password });
 }
 
-// create a new account and log straight into it.
-// real backend: POST /api/auth/register  body { name, email, password, role }
-// role is "student" or "teacher".
+// create a new account and log straight into it. role is "student" or
+// "teacher".
 // returns { token, user: { id, name, email, role } }
 // throws if the email is already taken.
 export async function register({ name, email, password, role }) {
-  const users = read("users", []);
-  if (users.some((u) => u.email.toLowerCase() === String(email).toLowerCase())) {
-    throw new Error("An account with that email already exists.");
+  return request("POST", "/api/auth/register", { name, email, password, role });
+}
+
+// invalidates the current token on the server. errors are ignored: the
+// caller clears the local session either way.
+export async function logout() {
+  try {
+    await request("POST", "/api/auth/logout");
+  } catch {
+    // already logged out or server unreachable
   }
-  const user = { id: uid("u"), name, email, passwordPlain: password, role };
-  write("users", [...users, user]);
-  return { token: uid("tok"), user: toPublicUser(user) };
 }
 
 // --- users ---
 
 // list every student account, e.g. to pick who to enroll in a new course.
-// real backend: GET /api/students  (teacher only)
-// returns [{ id, name, email, role }], sorted by name.
+// teacher only. returns [{ id, name, email, role }], sorted by name.
 export async function listStudents() {
-  return read("users", [])
-    .filter((u) => u.role === "student")
-    .map(toPublicUser)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return request("GET", "/api/students");
 }
 
 // --- courses ---
 
 // list the courses relevant to the logged-in user: the ones a teacher
 // teaches, or the ones a student is enrolled in.
-// real backend: GET /api/courses  (server works out the user from the token,
-// so the currentUser param can be dropped then)
 // returns [{ id, name, teacherId, studentIds: [id, ...] }]
-export async function listCourses(currentUser) {
-  const courses = read("courses", []);
-  return currentUser.role === "teacher"
-    ? courses.filter((c) => c.teacherId === currentUser.id)
-    : courses.filter((c) => c.studentIds.includes(currentUser.id));
+// (for a student, studentIds only contains their own id)
+export async function listCourses() {
+  return request("GET", "/api/courses");
 }
 
 // create a new course taught by the logged-in teacher.
-// real backend: POST /api/courses  body { name, studentIds }  (teacher only;
-// server takes the teacher id from the token)
 // returns the new course { id, name, teacherId, studentIds }
 // throws if the name is empty or the teacher already has a course with that
 // name.
-export async function createCourse({ name, studentIds = [] }, currentUser) {
-  const trimmed = String(name).trim();
-  if (!trimmed) throw new Error("Course name is required.");
-
-  const courses = read("courses", []);
-  const duplicate = courses.some(
-    (c) => c.teacherId === currentUser.id && c.name.toLowerCase() === trimmed.toLowerCase()
-  );
-  if (duplicate) throw new Error("You already have a course with that name.");
-
-  const course = { id: uid("c"), name: trimmed, teacherId: currentUser.id, studentIds };
-  write("courses", [...courses, course]);
-  return course;
+export async function createCourse({ name, studentIds = [] }) {
+  return request("POST", "/api/courses", { name, studentIds });
 }
 
-// get one course with its enrolled students filled in.
-// real backend: GET /api/courses/:courseId
+// get one of the logged-in teacher's courses with its enrolled students.
 // returns { id, name, students: [{ id, name, email, role }] }
 // throws "Course not found." if the id is unknown.
 export async function getCourse(courseId) {
-  const course = read("courses", []).find((c) => c.id === courseId);
-  if (!course) throw new Error("Course not found.");
-  const users = read("users", []);
-  const students = course.studentIds.map((id) => users.find((u) => u.id === id)).filter(Boolean).map(toPublicUser);
-  return { id: course.id, name: course.name, students };
+  return request("GET", `/api/courses/${encodeURIComponent(courseId)}`);
 }
 
 // --- attendance sessions ---
 
 // start a new attendance session for a course and generate its 2-digit code.
-// real backend: POST /api/courses/:courseId/sessions  (teacher only)
+// teacher only.
 // returns { id, courseId, code, status: "active", createdAt, expiresAt,
 // confirmations: [] }  (times are ms since epoch)
 export async function startAttendanceSession(courseId) {
-  const sessions = read("sessions", []);
-  const now = Date.now();
-  const session = {
-    id: uid("s"),
-    courseId,
-    code: generateUniqueCode(sessions),
-    status: "active",
-    createdAt: now,
-    expiresAt: now + SESSION_TTL_MS,
-    confirmations: [],
-  };
-  write("sessions", [...sessions, session]);
-  return session;
+  return request("POST", `/api/courses/${encodeURIComponent(courseId)}/sessions`);
 }
 
 // get the current state of a session; the teacher's page polls this to show
 // who has confirmed so far.
-// real backend: GET /api/sessions/:sessionId
 // returns the same session shape as startAttendanceSession, with status one
 // of "active" | "expired" | "ended" and confirmations as
 // [{ studentId, confirmedAt }]
 // throws "Session not found." if the id is unknown.
 export async function getSessionStatus(sessionId) {
-  const sessions = read("sessions", []);
-  const session = sessions.find((s) => s.id === sessionId);
-  if (!session) throw new Error("Session not found.");
-  refreshExpiry(session);
-  write("sessions", sessions);
-  return session;
+  return request("GET", `/api/sessions/${encodeURIComponent(sessionId)}`);
 }
 
 // student confirms attendance by typing the code shown on screen.
 // confirming twice is not an error, it just reports the original time.
-// real backend: POST /api/attendance/confirm  body { code }  (student only;
-// server takes the student id from the token)
 // returns { courseName, confirmedAt, alreadyConfirmed }
-// throws if the code is expired, doesn't match an active session, or belongs
-// to a course the student isn't enrolled in.
-export async function confirmAttendanceByCode(code, currentUser) {
-  const sessions = read("sessions", []);
-  const courses = read("courses", []);
-
-  const session = sessions.find((s) => s.code === code && refreshExpiry(s).status !== "expired");
-  if (!session) {
-    const everMatched = sessions.some((s) => s.code === code);
-    throw new Error(everMatched ? "This code has expired." : "That code doesn't match an active session.");
-  }
-
-  const course = courses.find((c) => c.id === session.courseId);
-  if (!course || !course.studentIds.includes(currentUser.id)) {
-    throw new Error("Code not recognized.");
-  }
-
-  const existing = session.confirmations.find((c) => c.studentId === currentUser.id);
-  if (!existing) {
-    session.confirmations.push({ studentId: currentUser.id, confirmedAt: Date.now() });
-    write("sessions", sessions);
-  }
-
-  return {
-    courseName: course.name,
-    confirmedAt: existing ? existing.confirmedAt : Date.now(),
-    alreadyConfirmed: Boolean(existing),
-  };
+// throws if the code is expired or doesn't match an active session of a
+// course the student is enrolled in.
+export async function confirmAttendanceByCode(code) {
+  return request("POST", "/api/attendance/confirm", { code });
 }
 
 // teacher closes a session early so the code stops working.
-// real backend: POST /api/sessions/:sessionId/end  (teacher only)
 // returns the updated session with status "ended".
 // throws "Session not found." if the id is unknown.
 export async function endSession(sessionId) {
-  const sessions = read("sessions", []);
-  const session = sessions.find((s) => s.id === sessionId);
-  if (!session) throw new Error("Session not found.");
-  session.status = "ended";
-  write("sessions", sessions);
-  return session;
+  return request("POST", `/api/sessions/${encodeURIComponent(sessionId)}/end`);
 }

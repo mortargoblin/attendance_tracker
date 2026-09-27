@@ -27,7 +27,7 @@ class ServerTest {
 
     @BeforeAll
     static void startServer() {
-        app = server.create(db.connection).start(0);
+        app = server.create(() -> db.connection).start(0);
         client = HttpClient.newHttpClient();
     }
 

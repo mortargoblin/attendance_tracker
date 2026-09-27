@@ -1,10 +1,9 @@
 import * as api from "../api.js";
-import { getCurrentUser } from "../store.js";
+import { escapeHtml } from "../html.js";
 import { navigate } from "../router.js";
 
 export async function renderTeacherDashboard(container) {
-  const user = getCurrentUser();
-  const [courses, students] = await Promise.all([api.listCourses(user), api.listStudents()]);
+  const [courses, students] = await Promise.all([api.listCourses(), api.listStudents()]);
 
   container.innerHTML = `
     <form id="create-course-form" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 mb-6">
@@ -23,8 +22,8 @@ export async function renderTeacherDashboard(container) {
                   .map(
                     (s) => `
                       <label class="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" name="student" value="${s.id}"> ${s.name}
-                        <span class="text-slate-400">${s.email}</span>
+                        <input type="checkbox" name="student" value="${s.id}"> ${escapeHtml(s.name)}
+                        <span class="text-slate-400">${escapeHtml(s.email)}</span>
                       </label>
                     `
                   )
@@ -46,13 +45,10 @@ export async function renderTeacherDashboard(container) {
     event.preventDefault();
     message.hidden = true;
     try {
-      await api.createCourse(
-        {
-          name: container.querySelector("#course-name").value,
-          studentIds: [...container.querySelectorAll('input[name="student"]:checked')].map((el) => el.value),
-        },
-        user
-      );
+      await api.createCourse({
+        name: container.querySelector("#course-name").value,
+        studentIds: [...container.querySelectorAll('input[name="student"]:checked')].map((el) => Number(el.value)),
+      });
       // re-render so the new course shows up in the list below
       renderTeacherDashboard(container);
     } catch (err) {
@@ -73,7 +69,7 @@ export async function renderTeacherDashboard(container) {
       (course) => `
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
           <div>
-            <p class="font-medium text-slate-900">${course.name}</p>
+            <p class="font-medium text-slate-900">${escapeHtml(course.name)}</p>
             <p class="text-sm text-slate-500">${course.studentIds.length} student${course.studentIds.length === 1 ? "" : "s"}</p>
           </div>
           <button data-course-id="${course.id}" class="start-session-btn shrink-0 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
@@ -86,8 +82,12 @@ export async function renderTeacherDashboard(container) {
 
   list.querySelectorAll(".start-session-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const session = await api.startAttendanceSession(btn.dataset.courseId);
-      navigate(`/teacher/session?sessionId=${session.id}`);
+      try {
+        const session = await api.startAttendanceSession(btn.dataset.courseId);
+        navigate(`/teacher/session?sessionId=${session.id}`);
+      } catch (err) {
+        alert(err.message);
+      }
     });
   });
 }

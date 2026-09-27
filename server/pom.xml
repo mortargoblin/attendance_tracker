@@ -22,6 +22,8 @@
     <jackson.version>2.19.0</jackson.version>
     <slf4j.version>2.0.17</slf4j.version>
     <mariadb.version>3.5.3</mariadb.version>
+    <bcrypt.version>0.10.2</bcrypt.version>
+    <h2.version>2.3.232</h2.version>
     <junit.version>5.12.2</junit.version>
 
     <!-- Plugin versions -->
@@ -53,11 +55,18 @@
       <version>${slf4j.version}</version>
     </dependency>
 
-    <!-- MariaDB JDBC driver, ready for the database work in Sprint 2 -->
+    <!-- MariaDB JDBC driver (also provides the connection pool) -->
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
       <version>${mariadb.version}</version>
+    </dependency>
+
+    <!-- Password hashing (users.password_hash is a 60 character bcrypt hash) -->
+    <dependency>
+      <groupId>at.favre.lib</groupId>
+      <artifactId>bcrypt</artifactId>
+      <version>${bcrypt.version}</version>
     </dependency>
 
     <!-- Testing -->
@@ -65,6 +74,14 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- In-memory database for the API tests, so they run without a MariaDB server -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

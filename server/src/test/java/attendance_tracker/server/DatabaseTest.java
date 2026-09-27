@@ -7,7 +7,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -40,17 +39,16 @@ class DatabaseTest {
     }
 
     @Nested
-    @DisplayName("connect")
-    class Connect {
+    @DisplayName("verify")
+    class Verify {
 
         private final FakeConnection fake = new FakeConnection();
 
         @Test
-        void returnsVerifiedConnectionFromSource() throws SQLException {
-            Connection connection = Database.connect("jdbc:fake", "user", () -> fake.connection);
+        void runsQueryAndGivesConnectionBack() throws SQLException {
+            Database.verify("jdbc:fake", "user", () -> fake.connection);
 
-            assertSame(fake.connection, connection);
-            assertEquals(0, fake.closeCount, "a healthy connection must stay open");
+            assertEquals(1, fake.closeCount, "the borrowed connection must be returned to the pool");
         }
 
         @Test
@@ -58,7 +56,7 @@ class DatabaseTest {
             fake.failure = new SQLException("server gone away");
 
             SQLException thrown = assertThrows(SQLException.class,
-                    () -> Database.connect("jdbc:fake", "user", () -> fake.connection));
+                    () -> Database.verify("jdbc:fake", "user", () -> fake.connection));
 
             assertSame(fake.failure, thrown);
             assertEquals(1, fake.closeCount, "a broken connection must be closed");
@@ -69,10 +67,15 @@ class DatabaseTest {
             SQLException cause = new SQLException("access denied");
 
             SQLException thrown = assertThrows(SQLException.class,
-                    () -> Database.connect("jdbc:fake", "user", () -> { throw cause; }));
+                    () -> Database.verify("jdbc:fake", "user", () -> { throw cause; }));
 
             assertSame(cause, thrown);
         }
+    }
+
+    @Nested
+    @DisplayName("connect")
+    class Connect {
 
         @Test
         void throwsSqlExceptionWhenServerIsUnreachable() {
