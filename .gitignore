@@ -1,0 +1,12 @@
+# Build output
+server/target/
+client/node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# OS / editor cruft
+*.log
+*.txt
+.DS_Store
