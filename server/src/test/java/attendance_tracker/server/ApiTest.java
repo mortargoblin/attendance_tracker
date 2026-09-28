@@ -3,6 +3,8 @@ package attendance_tracker.server;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
+import org.dhatim.fastexcel.reader.ReadableWorkbook;
+import org.dhatim.fastexcel.reader.Row;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -587,6 +590,134 @@ class ApiTest {
 
             clock.advance(SessionApi.CODE_TTL);
             start();
+        }
+    }
+
+    @Nested
+    @DisplayName("attendance report")
+    class AttendanceTests {
+
+        private User teacher;
+        private User anni;
+        private User sofia;
+        private long courseId;
+
+        @BeforeEach
+        void courseWithTwoStudents() throws Exception {
+            teacher = user("Tiina", "tiina@example.edu", "teacher");
+            anni = user("Anni Korhonen", "anni@example.edu", "student");
+            sofia = user("Sofia Rantala", "sofia@example.edu", "student");
+            courseId = createCourse(teacher, "Käyttöliittymät (UI) 1", anni.id(), sofia.id());
+        }
+
+        /** Starts a session, lets {@code present} confirm it, and returns its id. */
+        private long session(User... present) throws Exception {
+            JsonNode session = post("/api/courses/" + courseId + "/sessions", teacher.token(), null).body();
+            for (User student : present) {
+                Res res = post("/api/courses/" + courseId + "/attendance/confirm", student.token(), Map.of("code", session.get("code").asText()));
+                assertEquals(200, res.status(), res.body().toString());
+            }
+            post("/api/sessions/" + session.get("id").asLong() + "/end", teacher.token(), null);
+            clock.advance(Duration.ofHours(1));
+            return session.get("id").asLong();
+        }
+
+        private HttpResponse<byte[]> export(String token) throws IOException, InterruptedException {
+            HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/courses/" + courseId + "/attendance/export"))
+                    .header("Authorization", "Bearer " + token).build();
+            return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        }
+
+        private List<String> texts(Row row) {
+            return java.util.stream.IntStream.range(0, row.getCellCount()).mapToObj(row::getCellText).toList();
+        }
+
+        @Test
+        void showsEachStudentsStatusPerSession() throws Exception {
+            long first = session(anni, sofia);
+            session(anni);
+            long third = session();
+            sql("UPDATE attendances SET status = 'LATE' WHERE student_id = " + sofia.id() + " AND session_id = " + first);
+            sql("INSERT INTO attendances (session_id, student_id, status) VALUES (" + third + ", " + sofia.id() + ", 'EXCUSED')");
+
+            Res res = get("/api/courses/" + courseId + "/attendance", teacher.token());
+
+            assertEquals(200, res.status(), res.body().toString());
+            assertEquals("Käyttöliittymät (UI) 1", res.body().get("courseName").asText());
+            JsonNode sessions = res.body().get("sessions");
+            assertEquals(3, sessions.size());
+            assertEquals(first, sessions.get(0).get("id").asLong());
+            assertEquals(1, sessions.get(0).get("seqNo").asInt());
+            assertEquals(3, sessions.get(2).get("seqNo").asInt());
+
+            JsonNode students = res.body().get("students");
+            assertEquals(anni.id(), students.get(0).get("id").asLong());
+            assertEquals("Anni Korhonen", students.get(0).get("name").asText());
+            assertEquals("[\"present\",\"present\",\"absent\"]", students.get(0).get("statuses").toString());
+            assertEquals(2, students.get(0).get("attended").asInt());
+            assertEquals("[\"late\",\"absent\",\"excused\"]", students.get(1).get("statuses").toString());
+            assertEquals(1, students.get(1).get("attended").asInt());
+        }
+
+        @Test
+        void exportsTheSameTableAsExcel() throws Exception {
+            session(anni, sofia);
+            session(anni);
+
+            HttpResponse<byte[]> response = export(teacher.token());
+
+            assertEquals(200, response.statusCode());
+            assertEquals(AttendanceApi.XLSX, response.headers().firstValue("Content-Type").orElse(""));
+            assertEquals("attachment; filename=\"Kayttoliittymat_UI_1-attendance.xlsx\"",
+                    response.headers().firstValue("Content-Disposition").orElse(""));
+
+            try (ReadableWorkbook wb = new ReadableWorkbook(new ByteArrayInputStream(response.body()))) {
+                List<Row> rows = wb.getFirstSheet().read();
+                assertEquals(3, rows.size());
+                List<String> header = texts(rows.get(0));
+                assertEquals(List.of("Student", "Email"), header.subList(0, 2));
+                assertTrue(header.get(2).startsWith("#1 "), header.get(2));
+                assertEquals(List.of("Attended", "Attendance %"), header.subList(4, 6));
+
+                assertEquals(List.of("Anni Korhonen", "anni@example.edu", "Present", "Present"), texts(rows.get(1)).subList(0, 4));
+                assertEquals(2, rows.get(1).getCellAsNumber(4).orElseThrow().intValue());
+                assertEquals(1.0, rows.get(1).getCellAsNumber(5).orElseThrow().doubleValue());
+                assertEquals(List.of("Sofia Rantala", "sofia@example.edu", "Present", "Absent"), texts(rows.get(2)).subList(0, 4));
+                assertEquals(0.5, rows.get(2).getCellAsNumber(5).orElseThrow().doubleValue());
+            }
+        }
+
+        @Test
+        void courseWithoutSessions() throws Exception {
+            JsonNode body = get("/api/courses/" + courseId + "/attendance", teacher.token()).body();
+            assertEquals(0, body.get("sessions").size());
+            assertEquals(0, body.get("students").get(0).get("statuses").size());
+            assertEquals(0, body.get("students").get(0).get("attended").asInt());
+
+            try (ReadableWorkbook wb = new ReadableWorkbook(new ByteArrayInputStream(export(teacher.token()).body()))) {
+                List<Row> rows = wb.getFirstSheet().read();
+                assertEquals(List.of("Student", "Email", "Attended", "Attendance %"), texts(rows.get(0)));
+                assertEquals(0, rows.get(1).getCellAsNumber(2).orElseThrow().intValue());
+            }
+        }
+
+        @Test
+        void onlyTheCourseTeacherCanSeeIt() throws Exception {
+            User other = user("Mikko", "mikko@example.edu", "teacher");
+
+            Res notMine = get("/api/courses/" + courseId + "/attendance", other.token());
+            assertEquals(404, notMine.status());
+            assertEquals("Course not found.", notMine.error());
+            assertEquals(404, export(other.token()).statusCode());
+            assertEquals(403, get("/api/courses/" + courseId + "/attendance", anni.token()).status());
+            assertEquals(403, export(anni.token()).statusCode());
+            assertEquals(404, get("/api/courses/abc/attendance", teacher.token()).status());
+        }
+
+        @Test
+        void fileNamesAreAscii() {
+            assertEquals("OTP-attendance.xlsx", AttendanceApi.fileName("OTP"));
+            assertEquals("course-attendance.xlsx", AttendanceApi.fileName("??"));
         }
     }
 

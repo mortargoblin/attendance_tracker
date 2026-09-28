@@ -70,6 +70,7 @@ public final class server {
         AuthApi authApi = new AuthApi(db, auth, new Passwords(bcryptCost));
         CourseApi courseApi = new CourseApi(db, auth, clock);
         SessionApi sessionApi = new SessionApi(db, auth, clock);
+        AttendanceApi attendanceApi = new AttendanceApi(db, auth, clock);
 
         app.post("/api/auth/register", authApi::register);
         app.post("/api/auth/login", authApi::login);
@@ -79,6 +80,8 @@ public final class server {
         app.get("/api/courses", courseApi::listCourses);
         app.post("/api/courses", courseApi::createCourse);
         app.get("/api/courses/{courseId}", courseApi::getCourse);
+        app.get("/api/courses/{courseId}/attendance", attendanceApi::get);
+        app.get("/api/courses/{courseId}/attendance/export", attendanceApi::export);
 
         app.post("/api/courses/{courseId}/sessions", sessionApi::start);
         app.get("/api/sessions/{sessionId}", sessionApi::get);

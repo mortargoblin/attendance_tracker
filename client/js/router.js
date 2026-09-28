@@ -7,6 +7,7 @@ import { renderStudentDashboard } from "./pages/student-dashboard.js";
 import { renderConfirm } from "./pages/student-confirm.js";
 import { renderTeacherDashboard } from "./pages/teacher-dashboard.js";
 import { renderTeacherSession } from "./pages/teacher-session.js";
+import { renderTeacherAttendance } from "./pages/teacher-attendance.js";
 
 const routes = {
   "/login": { render: renderLogin },
@@ -15,6 +16,7 @@ const routes = {
   "/student/confirm": { render: renderConfirm, role: "student" },
   "/teacher": { render: renderTeacherDashboard, role: "teacher" },
   "/teacher/session": { render: renderTeacherSession, role: "teacher" },
+  "/teacher/attendance": { render: renderTeacherAttendance, role: "teacher" },
 };
 
 export function navigate(path) {

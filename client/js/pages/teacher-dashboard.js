@@ -72,9 +72,14 @@ export async function renderTeacherDashboard(container) {
             <p class="font-medium text-slate-900">${escapeHtml(course.name)}</p>
             <p class="text-sm text-slate-500">${course.studentIds.length} student${course.studentIds.length === 1 ? "" : "s"}</p>
           </div>
-          <button data-course-id="${course.id}" class="start-session-btn shrink-0 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-            Start attendance session
-          </button>
+          <div class="flex shrink-0 flex-col gap-2">
+            <button data-course-id="${course.id}" class="start-session-btn rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
+              Start attendance session
+            </button>
+            <a href="#/teacher/attendance?courseId=${course.id}" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">
+              View attendance
+            </a>
+          </div>
         </div>
       `
     )

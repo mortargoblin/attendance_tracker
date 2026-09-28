@@ -104,33 +104,41 @@ final class CourseApi {
         long courseId = server.pathId(ctx, "courseId", "Course not found.");
 
         try (Connection c = db.open()) {
-            String name;
-            try (PreparedStatement ps = c.prepareStatement("SELECT name FROM courses WHERE course_id = ? AND teacher_id = ?")) {
-                ps.setLong(1, courseId);
-                ps.setLong(2, me.userId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    // someone else's course looks the same as a missing one
-                    if (!rs.next()) {
-                        throw ApiError.notFound("Course not found.");
-                    }
-                    name = rs.getString("name");
-                }
-            }
-
-            String sql = "SELECT u.user_id, u.first_name, u.last_name, u.email, u.role FROM enrollments e "
-                    + "JOIN users u ON u.user_id = e.student_id "
-                    + "WHERE e.course_id = ? AND e.status = 'ACTIVE' ORDER BY u.first_name, u.last_name, u.user_id";
-            List<UserDto> students = new ArrayList<>();
-            try (PreparedStatement ps = c.prepareStatement(sql)) {
-                ps.setLong(1, courseId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        students.add(AuthApi.userFrom(rs));
-                    }
-                }
-            }
-            ctx.json(new CourseDetailDto(courseId, name, students));
+            String name = teacherCourseName(c, courseId, me.userId());
+            ctx.json(new CourseDetailDto(courseId, name, enrolledStudents(c, courseId)));
         }
+    }
+
+    /** The name of the course if {@code teacherId} teaches it; otherwise 404. */
+    static String teacherCourseName(Connection c, long courseId, long teacherId) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement("SELECT name FROM courses WHERE course_id = ? AND teacher_id = ?")) {
+            ps.setLong(1, courseId);
+            ps.setLong(2, teacherId);
+            try (ResultSet rs = ps.executeQuery()) {
+                // someone else's course looks the same as a missing one
+                if (!rs.next()) {
+                    throw ApiError.notFound("Course not found.");
+                }
+                return rs.getString("name");
+            }
+        }
+    }
+
+    /** The students actively enrolled in the course, sorted by name. */
+    static List<UserDto> enrolledStudents(Connection c, long courseId) throws SQLException {
+        String sql = "SELECT u.user_id, u.first_name, u.last_name, u.email, u.role FROM enrollments e "
+                + "JOIN users u ON u.user_id = e.student_id "
+                + "WHERE e.course_id = ? AND e.status = 'ACTIVE' ORDER BY u.first_name, u.last_name, u.user_id";
+        List<UserDto> students = new ArrayList<>();
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, courseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    students.add(AuthApi.userFrom(rs));
+                }
+            }
+        }
+        return students;
     }
 
     private long insertCourse(Connection c, long teacherId, String name, Set<Long> studentIds) throws SQLException {

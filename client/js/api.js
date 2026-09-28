@@ -13,6 +13,13 @@ const API_BASE = window.API_BASE ?? `${location.protocol}//${location.hostname}:
 // body (or null for an empty response). throws Error(<server message>) when
 // the response isn't ok.
 async function request(method, path, body) {
+  const text = await (await send(method, path, body)).text();
+  return text ? JSON.parse(text) : null;
+}
+
+// like request() but hands back the raw response for non-json bodies such as
+// file downloads. errors are handled the same way.
+async function send(method, path, body) {
   const headers = {};
   const session = getSession();
   if (session) headers.Authorization = `Bearer ${session.token}`;
@@ -29,15 +36,13 @@ async function request(method, path, body) {
     throw new Error("Can't reach the server. Check your connection and try again.");
   }
 
-  const text = await response.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    // non-json error page; fall through to the generic message below
-  }
-
   if (!response.ok) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      // non-json error page; fall through to the generic message below
+    }
     // token expired or revoked (e.g. server restart): drop it and go log in
     // again. login itself also answers 401, but there's no session then.
     if (response.status === 401 && session) {
@@ -46,7 +51,7 @@ async function request(method, path, body) {
     }
     throw new Error(data?.error || `Request failed (${response.status}).`);
   }
-  return data;
+  return response;
 }
 
 // --- auth ---
@@ -107,6 +112,24 @@ export async function createCourse({ name, studentIds = [] }) {
 // throws "Course not found." if the id is unknown.
 export async function getCourse(courseId) {
   return request("GET", `/api/courses/${encodeURIComponent(courseId)}`);
+}
+
+// attendance of every enrolled student in every session of one of the
+// logged-in teacher's courses. teacher only.
+// returns { courseId, courseName,
+//   sessions: [{ id, seqNo, startedAt }],   (oldest first, ms since epoch)
+//   students: [{ id, name, email, attended, statuses: [...] }] }
+// where statuses lines up with sessions and each is "present" | "late" |
+// "absent" | "excused", and attended counts present + late.
+// throws "Course not found." if the id is unknown.
+export async function getCourseAttendance(courseId) {
+  return request("GET", `/api/courses/${encodeURIComponent(courseId)}/attendance`);
+}
+
+// the same attendance table as an excel workbook. teacher only.
+// returns a Blob (.xlsx).
+export async function exportCourseAttendance(courseId) {
+  return (await send("GET", `/api/courses/${encodeURIComponent(courseId)}/attendance/export`)).blob();
 }
 
 // --- attendance sessions ---
