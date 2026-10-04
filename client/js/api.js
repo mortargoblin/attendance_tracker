@@ -114,14 +114,16 @@ export async function getCourse(courseId) {
   return request("GET", `/api/courses/${encodeURIComponent(courseId)}`);
 }
 
-// attendance of every enrolled student in every session of one of the
-// logged-in teacher's courses. teacher only.
+// attendance in every session of a course: for a teacher, every enrolled
+// student of one of their courses; for a student, just their own row in a
+// course they're enrolled in.
 // returns { courseId, courseName,
 //   sessions: [{ id, seqNo, startedAt }],   (oldest first, ms since epoch)
 //   students: [{ id, name, email, attended, statuses: [...] }] }
 // where statuses lines up with sessions and each is "present" | "late" |
 // "absent" | "excused", and attended counts present + late.
-// throws "Course not found." if the id is unknown.
+// throws "Course not found." if the id is unknown (or, for a student, they
+// aren't enrolled).
 export async function getCourseAttendance(courseId) {
   return request("GET", `/api/courses/${encodeURIComponent(courseId)}/attendance`);
 }

@@ -4,7 +4,7 @@ import { escapeHtml } from "../html.js";
 export async function renderStudentDashboard(container) {
   container.innerHTML = `
     <h1 class="text-xl font-bold text-slate-900 mb-1">Your courses</h1>
-    <p class="text-sm text-slate-500 mb-4">Pick a course to enter its attendance code.</p>
+    <p class="text-sm text-slate-500 mb-4">Enter a course's attendance code, or check your attendance so far.</p>
     <div id="course-list" class="space-y-3"></div>
   `;
 
@@ -14,11 +14,19 @@ export async function renderStudentDashboard(container) {
     ? courses
         .map(
           (c) => `
-            <a href="#/student/confirm?courseId=${encodeURIComponent(c.id)}"
-               class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-indigo-300 hover:bg-indigo-50">
-              <span class="font-medium text-slate-900">${escapeHtml(c.name)}</span>
-              <span class="shrink-0 text-sm font-medium text-indigo-600">Enter code &rarr;</span>
-            </a>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
+              <p class="font-medium text-slate-900">${escapeHtml(c.name)}</p>
+              <div class="flex shrink-0 flex-col gap-2">
+                <a href="#/student/confirm?courseId=${encodeURIComponent(c.id)}"
+                   class="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-700">
+                  Enter code
+                </a>
+                <a href="#/student/attendance?courseId=${encodeURIComponent(c.id)}"
+                   class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  View attendance
+                </a>
+              </div>
+            </div>
           `
         )
         .join("")

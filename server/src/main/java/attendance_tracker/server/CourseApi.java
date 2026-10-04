@@ -124,6 +124,23 @@ final class CourseApi {
         }
     }
 
+    /** The name of the course if {@code studentId} is actively enrolled in it; otherwise 404. */
+    static String studentCourseName(Connection c, long courseId, long studentId) throws SQLException {
+        String sql = "SELECT c.name FROM courses c JOIN enrollments e ON e.course_id = c.course_id "
+                + "WHERE c.course_id = ? AND e.student_id = ? AND e.status = 'ACTIVE'";
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, courseId);
+            ps.setLong(2, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                // a course the student isn't enrolled in looks the same as a missing one
+                if (!rs.next()) {
+                    throw ApiError.notFound("Course not found.");
+                }
+                return rs.getString("name");
+            }
+        }
+    }
+
     /** The students actively enrolled in the course, sorted by name. */
     static List<UserDto> enrolledStudents(Connection c, long courseId) throws SQLException {
         String sql = "SELECT u.user_id, u.first_name, u.last_name, u.email, u.role FROM enrollments e "

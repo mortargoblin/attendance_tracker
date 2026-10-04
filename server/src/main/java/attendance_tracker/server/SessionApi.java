@@ -137,20 +137,7 @@ final class SessionApi {
 
         LocalDateTime now = now();
         try (Connection c = db.open()) {
-            // a course the student isn't enrolled in looks the same as a missing one
-            String courseName;
-            String courseSql = "SELECT c.name FROM courses c JOIN enrollments e ON e.course_id = c.course_id "
-                    + "WHERE c.course_id = ? AND e.student_id = ? AND e.status = 'ACTIVE'";
-            try (PreparedStatement ps = c.prepareStatement(courseSql)) {
-                ps.setLong(1, courseId);
-                ps.setLong(2, me.userId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw ApiError.notFound("Course not found.");
-                    }
-                    courseName = rs.getString("name");
-                }
-            }
+            String courseName = CourseApi.studentCourseName(c, courseId, me.userId());
 
             long sessionId;
             String sql = "SELECT session_id FROM sessions WHERE course_id = ? AND attendance_code = ? AND code_expires_at > ? "

@@ -28,6 +28,9 @@ import java.util.Map;
  *
  * <p>Rows are the actively enrolled students, columns are the course's sessions in order. A student
  * without an attendances row for a session counts as absent, since confirming is what creates one.
+ *
+ * <p>The course's teacher gets every student. An enrolled student may fetch the JSON too, but only
+ * gets their own row; the export is for teachers only.
  */
 final class AttendanceApi {
 
@@ -83,7 +86,7 @@ final class AttendanceApi {
     }
 
     void get(Context ctx) throws SQLException {
-        Report report = load(ctx);
+        Report report = load(ctx, "teacher", "student");
 
         List<SessionColumn> sessions = new ArrayList<>();
         for (Session s : report.sessions()) {
@@ -101,19 +104,27 @@ final class AttendanceApi {
     }
 
     void export(Context ctx) throws SQLException, IOException {
-        Report report = load(ctx);
+        Report report = load(ctx, "teacher");
         ctx.contentType(XLSX)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName(report.courseName()) + "\"")
                 .result(workbook(report));
     }
 
-    private Report load(Context ctx) throws SQLException {
-        Auth.Principal me = auth.require(ctx, "teacher");
+    private Report load(Context ctx, String... roles) throws SQLException {
+        Auth.Principal me = auth.require(ctx, roles);
         long courseId = server.pathId(ctx, "courseId", "Course not found.");
+        boolean teacher = me.role().equals("teacher");
 
         try (Connection c = db.open()) {
-            String name = CourseApi.teacherCourseName(c, courseId, me.userId());
-            List<UserDto> students = CourseApi.enrolledStudents(c, courseId);
+            String name;
+            List<UserDto> students;
+            if (teacher) {
+                name = CourseApi.teacherCourseName(c, courseId, me.userId());
+                students = CourseApi.enrolledStudents(c, courseId);
+            } else {
+                name = CourseApi.studentCourseName(c, courseId, me.userId());
+                students = CourseApi.enrolledStudents(c, courseId).stream().filter(s -> s.id() == me.userId()).toList();
+            }
 
             List<Session> sessions = new ArrayList<>();
             try (PreparedStatement ps = c.prepareStatement(
@@ -128,9 +139,13 @@ final class AttendanceApi {
 
             Map<Long, Map<Long, String>> statuses = new HashMap<>();
             String sql = "SELECT a.student_id, a.session_id, a.status FROM attendances a "
-                    + "JOIN sessions s ON s.session_id = a.session_id WHERE s.course_id = ?";
+                    + "JOIN sessions s ON s.session_id = a.session_id WHERE s.course_id = ?"
+                    + (teacher ? "" : " AND a.student_id = ?");
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setLong(1, courseId);
+                if (!teacher) {
+                    ps.setLong(2, me.userId());
+                }
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         statuses.computeIfAbsent(rs.getLong("student_id"), k -> new HashMap<>())

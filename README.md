@@ -129,6 +129,8 @@ All endpoints except register/login take `Authorization: Bearer <token>`. Errors
 | GET | `/api/courses` | teacher, student |
 | POST | `/api/courses` | teacher |
 | GET | `/api/courses/{courseId}` | teacher of that course |
+| GET | `/api/courses/{courseId}/attendance` | teacher of that course (every student), or a student enrolled in it (only their own row) |
+| GET | `/api/courses/{courseId}/attendance/export` | teacher of that course |
 | POST | `/api/courses/{courseId}/sessions` | teacher of that course |
 | GET | `/api/sessions/{sessionId}` | teacher of that course |
 | POST | `/api/sessions/{sessionId}/end` | teacher of that course |

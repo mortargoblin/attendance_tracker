@@ -702,16 +702,46 @@ class ApiTest {
         }
 
         @Test
-        void onlyTheCourseTeacherCanSeeIt() throws Exception {
+        void onlyTheCourseTeacherCanSeeEveryone() throws Exception {
             User other = user("Mikko", "mikko@example.edu", "teacher");
 
             Res notMine = get("/api/courses/" + courseId + "/attendance", other.token());
             assertEquals(404, notMine.status());
             assertEquals("Course not found.", notMine.error());
             assertEquals(404, export(other.token()).statusCode());
-            assertEquals(403, get("/api/courses/" + courseId + "/attendance", anni.token()).status());
             assertEquals(403, export(anni.token()).statusCode());
             assertEquals(404, get("/api/courses/abc/attendance", teacher.token()).status());
+        }
+
+        @Test
+        void studentSeesOnlyTheirOwnRow() throws Exception {
+            long first = session(anni, sofia);
+            session(sofia);
+            sql("UPDATE attendances SET status = 'LATE' WHERE student_id = " + anni.id() + " AND session_id = " + first);
+
+            Res res = get("/api/courses/" + courseId + "/attendance", anni.token());
+
+            assertEquals(200, res.status(), res.body().toString());
+            assertEquals("Käyttöliittymät (UI) 1", res.body().get("courseName").asText());
+            assertEquals(2, res.body().get("sessions").size());
+            JsonNode students = res.body().get("students");
+            assertEquals(1, students.size());
+            assertEquals(anni.id(), students.get(0).get("id").asLong());
+            assertEquals("[\"late\",\"absent\"]", students.get(0).get("statuses").toString());
+            assertEquals(1, students.get(0).get("attended").asInt());
+        }
+
+        @Test
+        void studentMustBeEnrolled() throws Exception {
+            User outsider = user("Pekka", "pekka@example.edu", "student");
+            sql("UPDATE enrollments SET status = 'DROPPED' WHERE student_id = " + sofia.id());
+
+            Res res = get("/api/courses/" + courseId + "/attendance", outsider.token());
+
+            assertEquals(404, res.status());
+            assertEquals("Course not found.", res.error());
+            assertEquals(404, get("/api/courses/" + courseId + "/attendance", sofia.token()).status());
+            assertEquals(404, get("/api/courses/abc/attendance", anni.token()).status());
         }
 
         @Test

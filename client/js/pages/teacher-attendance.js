@@ -1,12 +1,6 @@
 import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
-
-const BADGES = {
-  present: { label: "Present", short: "✓", classes: "bg-emerald-100 text-emerald-800" },
-  late: { label: "Late", short: "L", classes: "bg-amber-100 text-amber-800" },
-  absent: { label: "Absent", short: "✗", classes: "bg-red-100 text-red-700" },
-  excused: { label: "Excused", short: "E", classes: "bg-sky-100 text-sky-800" },
-};
+import { BADGES } from "../attendance-status.js";
 
 export async function renderTeacherAttendance(container, params) {
   const courseId = params.get("courseId");
