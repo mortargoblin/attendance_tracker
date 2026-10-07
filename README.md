@@ -1,13 +1,105 @@
-Technology stack: Java, JavaFX, MariaDB
+# Attendance Tracker
+
+## Project overview & objectives
+
+Attendance Tracker is a web application for recording lecture attendance. Taking attendance by hand
+is slow and easy to fake, so the system replaces it with a short-lived code.
+
+- **Users:** teachers and students. The schema also has an `ADMIN` role reserved for future use.
+- **Core functionality:** a teacher creates a course, enrolls students and starts a session. Starting
+  a session generates a two-digit code that expires after a set time. Students confirm their attendance
+  by entering the code. The teacher sees every student's status for each session and can export the
+  table to Excel (`.xlsx`). Students see only their own attendance.
+- **Goals:** attendance that is fast to record and hard to fake, role-based access so students see only
+  their own data, and an automated build/test/deploy pipeline (Jenkins + Docker) with at least 75% test
+  coverage.
+
+## Technology stack & dependencies
+
+Technology stack: Java, Javalin, MariaDB
 Reasoning behind the technologies: We chose to use the technologies that the lecturer support
 
+| Area | Technology / version |
+| --- | --- |
+| Runtime | JDK 21 (LTS), Node.js (for serving the frontend) |
+| Build | Maven 3.9 via the checked-in Maven Wrapper (`mvnw`) |
+| Backend | Javalin 6.7.0 (embedded Jetty), Jackson 2.19.0, SLF4J 2.0.17, bcrypt 0.10.2, FastExcel 0.20.2 |
+| Database | MariaDB 11 (JDBC driver `mariadb-java-client` 3.5.3) |
+| Frontend | Vanilla JavaScript (ES modules, hash router), Tailwind CSS 4, `serve` |
+| Testing | JUnit 5.12.2, H2 2.3.232 (in-memory, `MODE=MariaDB`), fastexcel-reader, JaCoCo 0.8.13 |
+| CI/CD & deployment | Jenkins (declarative `Jenkinsfile`), Docker (multi-stage `server/Dockerfile`), Docker Compose |
+| Localization | No resource bundles. The UI is English only. |
+
+## Design & development methodology
+
+**Architecture.** A layered client–server architecture:
+
+```
+Browser (client/)  --HTTP/JSON-->  REST API (server/, Javalin)  --JDBC-->  MariaDB
+```
+
+- **Presentation layer:** `client/` is a single-page app. `router.js` maps hash routes to page
+  modules in `js/pages/` and guards each route by role. `store.js` keeps the session token, and
+  `api.js` wraps every backend call.
+- **API / application layer:** `server.java` creates the Javalin app and registers one handler class
+  per resource: `AuthApi`, `CourseApi`, `SessionApi` and `AttendanceApi`. Cross-cutting concerns live in
+  their own classes: `Auth` handles bearer-token authentication and role checks, `Passwords` handles
+  bcrypt hashing, and `ApiError` produces uniform JSON errors. CORS and the security headers are set in
+  `server.java`.
+- **Data layer:** `Database` builds a MariaDB connection pool from environment variables. Handlers get
+  connections through a `ConnectionSource` interface (dependency injection). The same interface lets
+  the tests swap in H2 or a fake connection. A `Clock` is injected as well, so tests can control code
+  expiry.
+
+**UML and ER design.**
+- Use case diagram: `Documents/käyttötapauskaavio.png`.
+- ER model, implemented in `attendance_tracker_v2.sql`:
+  - `users` (role: STUDENT/TEACHER/ADMIN), with one teacher per course: `users 1–N courses`.
+  - `courses 1–N sessions`. `sessions` is a weak entity, keyed by `(course_id, seq_no)`.
+  - `users N–M courses` through `enrollments`.
+  - `users N–M sessions` through `attendances` (status PRESENT/LATE/ABSENT/EXCUSED).
+  - Foreign keys, unique keys and `CHECK` constraints enforce integrity in the database itself.
+
+**Development process.** We worked in Scrum sprints. The vision and backlog are in
+`Documents/productvision.docx` and `Documents/InitialProductBacklog.docx`, and each sprint ended with a
+review (`Documents/sprint1review.docx`, `spint2review.pdf`, `sprint3review.pdf`). Work was version-controlled
+in Git. Every commit is built and tested automatically by the Jenkins pipeline described below.
+
+## Functional testing
+
+**Methodology.** The backend is verified with automated JUnit 5 tests in `server/src/test/`:
+
+- `ApiTest` (36 tests): end-to-end functional tests. They start the real Javalin server and call it
+  over HTTP with `java.net.http.HttpClient`. The database is an in-memory H2 instance in MariaDB mode,
+  built from `src/test/resources/schema.sql` and emptied before each test. A controllable `TestClock`
+  tests code expiry. The tests are grouped by feature:
+  - **auth:** register, login, logout, duplicate/invalid input, bad or expired tokens.
+  - **courses:** creation, validation, visibility per role.
+  - **attendance sessions:** code generation, enrollment and course checks, wrong codes, expiry, ending a session.
+  - **attendance report:** per-student status, Excel export read back with fastexcel-reader, student sees only own row.
+  - **http:** CORS origins, security headers, database errors not leaked.
+- `ServerTest` (5 tests): base routes and the 404 response, run against a fake database connection.
+- `DatabaseTest` and `AppTest` (including parameterized cases): configuration defaults, connection handling and
+  port parsing.
+
+**Evidence.** `./mvnw clean verify` runs the whole suite. It writes JUnit reports to
+`server/target/surefire-reports/` and a JaCoCo coverage report to
+`server/target/site/jacoco/index.html`. The build fails if line or branch coverage falls below 75%.
+Jenkins runs the same command on every new commit and publishes the test results and coverage
+trend for each build (see *CI/CD with Jenkins*). Each sprint's features were also tested by hand in the
+browser and demonstrated in the sprint reviews.
+
 ## Running locally
+
+Prerequisites: JDK 21+, Node.js, and MariaDB (or Docker; see below). On Windows, `start.bat`
+builds the backend and starts both the backend and the frontend in one step.
 
 1. Load `attendance_tracker_v2.sql` into MariaDB.
 2. Start the backend from `server/`: `./mvnw package` then `java -jar target/attendance-tracker-server.jar`.
    Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (default 3000) and
    `CORS_ORIGINS` (comma separated frontend origins, default `http://127.0.0.1:1337,http://localhost:1337`).
 3. Serve the frontend from `client/`: `npm run serve`, then open http://127.0.0.1:1337.
+4. Run the tests and coverage check from `server/`: `./mvnw clean verify`. This needs no database.
 
 The sample users in the SQL file have placeholder password hashes, so register new accounts to log in.
 
