@@ -49,6 +49,9 @@
   "teacher.dashboard.createCourse": "Luo kurssi",
   "teacher.dashboard.heading": "Kurssisi",
   "teacher.dashboard.noCourses": "Ei vielä kursseja.",
+  "teacher.dashboard.searchStudents": "Hae opiskelijoita nimellä tai sähköpostilla (väh. {min} merkkiä)",
+  "teacher.dashboard.searchHint": "Kirjoita vähintään {min} merkkiä hakeaksesi opiskelijoita.",
+  "teacher.dashboard.noMatches": "Opiskelijoita ei löytynyt.",
   "teacher.dashboard.startSession": "Aloita läsnäolokerta",
 
   "teacher.session.roster": "Osallistujat",

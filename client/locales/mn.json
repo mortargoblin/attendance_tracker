@@ -49,6 +49,9 @@
   "teacher.dashboard.createCourse": "Хичээл үүсгэх",
   "teacher.dashboard.heading": "Таны хичээлүүд",
   "teacher.dashboard.noCourses": "Хичээл хараахан алга.",
+  "teacher.dashboard.searchStudents": "Оюутныг нэр эсвэл имэйлээр хайх (хамгийн багадаа {min} тэмдэгт)",
+  "teacher.dashboard.searchHint": "Оюутан хайхын тулд хамгийн багадаа {min} тэмдэгт оруулна уу.",
+  "teacher.dashboard.noMatches": "Оюутан олдсонгүй.",
   "teacher.dashboard.startSession": "Ирц бүртгэж эхлэх",
 
   "teacher.session.roster": "Нэрсийн жагсаалт",

@@ -46,6 +46,9 @@
   "teacher.dashboard.createCourse": "コースを作成",
   "teacher.dashboard.heading": "担当コース",
   "teacher.dashboard.noCourses": "まだコースがありません。",
+  "teacher.dashboard.searchStudents": "名前またはメールで学生を検索（{min}文字以上）",
+  "teacher.dashboard.searchHint": "学生を検索するには{min}文字以上入力してください。",
+  "teacher.dashboard.noMatches": "学生が見つかりません。",
   "teacher.dashboard.startSession": "出席セッションを開始",
 
   "teacher.session.roster": "名簿",

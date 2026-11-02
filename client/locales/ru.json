@@ -51,6 +51,9 @@
   "teacher.dashboard.createCourse": "Создать курс",
   "teacher.dashboard.heading": "Ваши курсы",
   "teacher.dashboard.noCourses": "Курсов пока нет.",
+  "teacher.dashboard.searchStudents": "Поиск студентов по имени или email (мин. {min} символа)",
+  "teacher.dashboard.searchHint": "Введите не менее {min} символов для поиска студентов.",
+  "teacher.dashboard.noMatches": "Студенты не найдены.",
   "teacher.dashboard.startSession": "Начать отметку",
 
   "teacher.session.roster": "Список группы",

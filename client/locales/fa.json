@@ -49,6 +49,9 @@
   "teacher.dashboard.createCourse": "ایجاد درس",
   "teacher.dashboard.heading": "درس‌های شما",
   "teacher.dashboard.noCourses": "هنوز درسی ندارید.",
+  "teacher.dashboard.searchStudents": "جستجوی دانشجو با نام یا ایمیل (حداقل {min} نویسه)",
+  "teacher.dashboard.searchHint": "برای جستجوی دانشجو حداقل {min} نویسه وارد کنید.",
+  "teacher.dashboard.noMatches": "دانشجویی پیدا نشد.",
   "teacher.dashboard.startSession": "شروع جلسهٔ حضور و غیاب",
 
   "teacher.session.roster": "فهرست دانشجویان",

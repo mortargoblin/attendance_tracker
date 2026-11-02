@@ -49,6 +49,9 @@
   "teacher.dashboard.createCourse": "Create course",
   "teacher.dashboard.heading": "Your courses",
   "teacher.dashboard.noCourses": "No courses yet.",
+  "teacher.dashboard.searchStudents": "Search students by name or email (min. {min} characters)",
+  "teacher.dashboard.searchHint": "Type at least {min} characters to search for students.",
+  "teacher.dashboard.noMatches": "No students found.",
   "teacher.dashboard.startSession": "Start attendance session",
 
   "teacher.session.roster": "Roster",

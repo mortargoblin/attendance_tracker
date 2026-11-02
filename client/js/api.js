@@ -86,8 +86,14 @@ export async function logout() {
 
 // list every student account, e.g. to pick who to enroll in a new course.
 // teacher only. returns [{ id, name, email, role }], sorted by name.
-export async function listStudents() {
-  return request("GET", "/api/students");
+// optional { q, limit }: q keeps only students whose name or email contains
+// it, limit caps how many come back (the server allows at most 50).
+export async function listStudents({ q, limit } = {}) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (limit) params.set("limit", limit);
+  const query = params.toString();
+  return request("GET", "/api/students" + (query ? `?${query}` : ""));
 }
 
 // --- courses ---

@@ -50,14 +50,46 @@ final class CourseApi {
         this.clock = clock;
     }
 
+    /** Most students one request returns when a limit is asked for. */
+    static final int MAX_STUDENT_LIMIT = 50;
+
+    /**
+     * GET /api/students. Optional {@code q} keeps only students whose name or email contains it, and
+     * optional {@code limit} caps the result (at most {@link #MAX_STUDENT_LIMIT}); without them every student is returned.
+     */
     void listStudents(Context ctx) throws SQLException {
         auth.require(ctx, "teacher");
-        String sql = "SELECT user_id, first_name, last_name, email, role FROM users WHERE role = 'STUDENT' "
-                + "ORDER BY first_name, last_name, user_id";
+        String q = ctx.queryParam("q") == null ? "" : ctx.queryParam("q").trim();
+        int limit = 0;
+        String limitParam = ctx.queryParam("limit");
+        if (limitParam != null) {
+            try {
+                limit = Math.max(1, Math.min(MAX_STUDENT_LIMIT, Integer.parseInt(limitParam.trim())));
+            } catch (NumberFormatException e) {
+                throw ApiError.badRequest("Invalid limit.");
+            }
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT user_id, first_name, last_name, email, role FROM users WHERE role = 'STUDENT'");
+        if (!q.isEmpty()) {
+            sql.append(" AND (CONCAT(first_name, ' ', last_name) LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!')");
+        }
+        sql.append(" ORDER BY first_name, last_name, user_id");
+        if (limit > 0) {
+            sql.append(" LIMIT ").append(limit);
+        }
+
         List<UserDto> students = new ArrayList<>();
-        try (Connection c = db.open(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                students.add(AuthApi.userFrom(rs));
+        try (Connection c = db.open(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            if (!q.isEmpty()) {
+                String pattern = "%" + q.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+                ps.setString(1, pattern);
+                ps.setString(2, pattern);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    students.add(AuthApi.userFrom(rs));
+                }
             }
         }
         ctx.json(students);
