@@ -226,6 +226,7 @@ All endpoints except register/login take `Authorization: Bearer <token>`. Errors
 | POST | `/api/courses/{courseId}/sessions` | teacher of that course |
 | GET | `/api/sessions/{sessionId}` | teacher of that course |
 | POST | `/api/sessions/{sessionId}/end` | teacher of that course |
+| POST | `/api/sessions/{sessionId}/students/{studentId}/present` | teacher of that course (manual mark) |
 | POST | `/api/courses/{courseId}/attendance/confirm` | student enrolled in that course |
 
 Request and response shapes are documented in `client/js/api.js`.

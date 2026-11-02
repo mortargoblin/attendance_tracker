@@ -59,6 +59,7 @@
   "teacher.session.expiredButton": "جلسه منقضی شد",
   "teacher.session.endedButton": "جلسه پایان یافت",
   "teacher.session.confirmedCount": "{confirmed} از {total} تأیید شده",
+  "teacher.session.markPresent": "ثبت حضور",
   "teacher.session.confirmedAt": "تأیید شده {time}",
   "teacher.session.pending": "در انتظار",
 

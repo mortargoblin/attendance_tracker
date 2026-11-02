@@ -126,6 +126,28 @@ final class SessionApi {
         }
     }
 
+    /** Teacher marks an enrolled student present by hand. */
+    void markManually(Context ctx) throws SQLException {
+        Auth.Principal me = auth.require(ctx, "teacher");
+        long sessionId = server.pathId(ctx, "sessionId", "Session not found.");
+        long studentId = server.pathId(ctx, "studentId", "Student not found.");
+        try (Connection c = db.open()) {
+            SessionDto session = loadSession(c, sessionId, me.userId());
+            boolean enrolled = CourseApi.enrolledStudents(c, session.courseId()).stream().anyMatch(s -> s.id() == studentId);
+            if (!enrolled) {
+                throw ApiError.notFound("Student not found.");
+            }
+            if (presentSince(c, sessionId, studentId) == null) {
+                try {
+                    markPresent(c, sessionId, studentId, now(), "TEACHER");
+                } catch (SQLIntegrityConstraintViolationException e) {
+                    // inserted by a concurrent request
+                }
+            }
+            ctx.json(loadSession(c, sessionId, me.userId()));
+        }
+    }
+
     void confirm(Context ctx) throws SQLException {
         Auth.Principal me = auth.require(ctx, "student");
         long courseId = server.pathId(ctx, "courseId", "Course not found.");
@@ -268,20 +290,26 @@ final class SessionApi {
 
     /** Inserts a PRESENT row, or upgrades one the teacher already set to ABSENT/EXCUSED. */
     private static void markPresent(Connection c, long sessionId, long studentId, LocalDateTime now) throws SQLException {
-        String update = "UPDATE attendances SET status = 'PRESENT', marked_at = ?, marked_via = 'CODE' WHERE session_id = ? AND student_id = ?";
+        markPresent(c, sessionId, studentId, now, "CODE");
+    }
+
+    private static void markPresent(Connection c, long sessionId, long studentId, LocalDateTime now, String via) throws SQLException {
+        String update = "UPDATE attendances SET status = 'PRESENT', marked_at = ?, marked_via = ? WHERE session_id = ? AND student_id = ?";
         try (PreparedStatement ps = c.prepareStatement(update)) {
             ps.setObject(1, now);
-            ps.setLong(2, sessionId);
-            ps.setLong(3, studentId);
+            ps.setString(2, via);
+            ps.setLong(3, sessionId);
+            ps.setLong(4, studentId);
             if (ps.executeUpdate() > 0) {
                 return;
             }
         }
-        String insert = "INSERT INTO attendances (session_id, student_id, status, marked_at, marked_via) VALUES (?, ?, 'PRESENT', ?, 'CODE')";
+        String insert = "INSERT INTO attendances (session_id, student_id, status, marked_at, marked_via) VALUES (?, ?, 'PRESENT', ?, ?)";
         try (PreparedStatement ps = c.prepareStatement(insert)) {
             ps.setLong(1, sessionId);
             ps.setLong(2, studentId);
             ps.setObject(3, now);
+            ps.setString(4, via);
             ps.executeUpdate();
         }
     }

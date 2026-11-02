@@ -59,6 +59,7 @@
   "teacher.session.expiredButton": "Kerta vanhentunut",
   "teacher.session.endedButton": "Kerta päättynyt",
   "teacher.session.confirmedCount": "{confirmed}/{total} vahvistanut",
+  "teacher.session.markPresent": "Merkitse paikalle",
   "teacher.session.confirmedAt": "Vahvistettu {time}",
   "teacher.session.pending": "Odottaa",
 

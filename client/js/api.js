@@ -172,3 +172,9 @@ export async function confirmAttendanceByCode(courseId, code) {
 export async function endSession(sessionId) {
   return request("POST", `/api/sessions/${encodeURIComponent(sessionId)}/end`);
 }
+
+// teacher marks a student present by hand (e.g. they couldn't enter the code).
+// returns the updated session.
+export async function markStudentPresent(sessionId, studentId) {
+  return request("POST", `/api/sessions/${encodeURIComponent(sessionId)}/students/${encodeURIComponent(studentId)}/present`);
+}

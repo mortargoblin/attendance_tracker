@@ -59,6 +59,7 @@
   "teacher.session.expiredButton": "Session expired",
   "teacher.session.endedButton": "Session ended",
   "teacher.session.confirmedCount": "{confirmed}/{total} confirmed",
+  "teacher.session.markPresent": "Mark present",
   "teacher.session.confirmedAt": "Confirmed {time}",
   "teacher.session.pending": "Pending",
 

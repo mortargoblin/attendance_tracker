@@ -87,6 +87,7 @@ public final class server {
         app.get("/api/sessions/{sessionId}", sessionApi::get);
         app.post("/api/sessions/{sessionId}/end", sessionApi::end);
         app.post("/api/courses/{courseId}/attendance/confirm", sessionApi::confirm);
+        app.post("/api/sessions/{sessionId}/students/{studentId}/present", sessionApi::markManually);
 
         return app;
     }

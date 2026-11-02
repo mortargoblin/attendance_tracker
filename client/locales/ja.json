@@ -56,6 +56,7 @@
   "teacher.session.expiredButton": "セッション期限切れ",
   "teacher.session.endedButton": "セッション終了済み",
   "teacher.session.confirmedCount": "{confirmed}/{total}名 確定",
+  "teacher.session.markPresent": "出席にする",
   "teacher.session.confirmedAt": "{time} 確定",
   "teacher.session.pending": "未確定",
 

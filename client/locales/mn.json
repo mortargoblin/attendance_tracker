@@ -59,6 +59,7 @@
   "teacher.session.expiredButton": "Хугацаа дууссан",
   "teacher.session.endedButton": "Хуралдаан дууссан",
   "teacher.session.confirmedCount": "{confirmed}/{total} баталгаажсан",
+  "teacher.session.markPresent": "Ирсэнд тооцох",
   "teacher.session.confirmedAt": "{time}-д баталгаажсан",
   "teacher.session.pending": "Хүлээгдэж буй",
 

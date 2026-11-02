@@ -58,13 +58,28 @@ export async function renderTeacherSession(container, params) {
           ? `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">
                ${t("teacher.session.confirmedAt", { time: formatTime(confirmation.confirmedAt) })}
              </span>`
-          : `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">${t("teacher.session.pending")}</span>`;
+          : `<span class="inline-flex items-center gap-2">
+               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">${t("teacher.session.pending")}</span>
+               <button data-mark="${student.id}" class="rounded-lg border border-indigo-300 px-2 py-0.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50">${t("teacher.session.markPresent")}</button>
+             </span>`;
         return `<li class="flex items-center justify-between py-2">
                   <span class="text-sm text-slate-800">${escapeHtml(student.name)}</span>${badge}
                 </li>`;
       })
       .join("");
   }
+
+  container.querySelector("#roster-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-mark]");
+    if (!btn) return;
+    btn.disabled = true;
+    try {
+      render(await api.markStudentPresent(sessionId, btn.dataset.mark));
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false;
+    }
+  });
 
   render(session);
 

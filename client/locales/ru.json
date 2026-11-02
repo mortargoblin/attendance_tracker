@@ -61,6 +61,7 @@
   "teacher.session.expiredButton": "Время истекло",
   "teacher.session.endedButton": "Занятие завершено",
   "teacher.session.confirmedCount": "Подтвердили: {confirmed}/{total}",
+  "teacher.session.markPresent": "Отметить присутствие",
   "teacher.session.confirmedAt": "Подтверждено в {time}",
   "teacher.session.pending": "Ожидание",
 
