@@ -1,11 +1,12 @@
 // client for the java backend (server/). every exported function is async
-// and throws a plain Error("message") on failure; pages catch it and show
-// err.message to the user.
+// and throws a plain Error("message") on failure, already translated into the
+// current language; pages catch it and show err.message to the user.
 //
 // the backend is expected on port 3000 of the same host that serves this
 // page; set window.API_BASE before the scripts load to point elsewhere.
 
 import { getSession, clearSession } from "./store.js";
+import { t, translateServerError } from "./i18n.js";
 
 const API_BASE = window.API_BASE ?? `${location.protocol}//${location.hostname}:3000`;
 
@@ -33,7 +34,7 @@ async function send(method, path, body) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error("Can't reach the server. Check your connection and try again.");
+    throw new Error(t("errors.network"));
   }
 
   if (!response.ok) {
@@ -49,7 +50,7 @@ async function send(method, path, body) {
       clearSession();
       location.hash = "#/login";
     }
-    throw new Error(data?.error || `Request failed (${response.status}).`);
+    throw new Error(data?.error ? translateServerError(data.error) : t("errors.requestFailed", { status: response.status }));
   }
   return response;
 }

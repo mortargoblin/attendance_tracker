@@ -1,7 +1,8 @@
 # Makefile for the Attendance Tracker backend.
-# Wraps the Maven Wrapper and Docker commands; run `make help` for a list of targets.
+# Wraps Maven (or the Maven Wrapper) and Docker commands; run `make help` for a list of targets.
 
-MVN        := sh ./mvnw -B
+# Use the system Maven if installed, otherwise the wrapper (override with `make MVN=...`)
+MVN        ?= $(if $(shell command -v mvn 2>/dev/null),mvn,sh ./mvnw) -B
 JAR        := target/attendance-tracker-server.jar
 IMAGE      := attendance-tracker-server
 # Prefer the `docker compose` plugin, fall back to standalone `docker-compose`

@@ -1,29 +1,30 @@
 import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
 import { navigate } from "../router.js";
+import { t } from "../i18n.js";
 
 export async function renderTeacherDashboard(container) {
   const [courses, students] = await Promise.all([api.listCourses(), api.listStudents()]);
 
   container.innerHTML = `
     <form id="create-course-form" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 mb-6">
-      <h2 class="text-lg font-semibold text-slate-900">New course</h2>
+      <h2 class="text-lg font-semibold text-slate-900">${t("teacher.dashboard.newCourse")}</h2>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" for="course-name">Course name</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="course-name">${t("teacher.dashboard.courseName")}</label>
         <input class="block w-full rounded-lg border border-slate-300 px-3 py-2" type="text" id="course-name" required>
       </div>
       <fieldset>
-        <legend class="block text-sm font-medium text-slate-700 mb-1">Students</legend>
+        <legend class="block text-sm font-medium text-slate-700 mb-1">${t("teacher.dashboard.students")}</legend>
         ${
           students.length === 0
-            ? `<p class="text-slate-500 text-sm">No student accounts yet.</p>`
+            ? `<p class="text-slate-500 text-sm">${t("teacher.dashboard.noStudentAccounts")}</p>`
             : `<div class="max-h-48 overflow-y-auto space-y-1">
                 ${students
                   .map(
                     (s) => `
                       <label class="flex items-center gap-2 text-sm text-slate-700">
                         <input type="checkbox" name="student" value="${s.id}"> ${escapeHtml(s.name)}
-                        <span class="text-slate-400">${escapeHtml(s.email)}</span>
+                        <span class="text-slate-400" dir="ltr">${escapeHtml(s.email)}</span>
                       </label>
                     `
                   )
@@ -31,11 +32,11 @@ export async function renderTeacherDashboard(container) {
               </div>`
         }
       </fieldset>
-      <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Create course</button>
+      <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">${t("teacher.dashboard.createCourse")}</button>
       <p id="message" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" hidden></p>
     </form>
 
-    <h1 class="text-xl font-bold text-slate-900 mb-4">Your courses</h1>
+    <h1 class="text-xl font-bold text-slate-900 mb-4">${t("teacher.dashboard.heading")}</h1>
     <div id="course-list" class="space-y-3"></div>
   `;
 
@@ -60,7 +61,7 @@ export async function renderTeacherDashboard(container) {
   const list = container.querySelector("#course-list");
 
   if (courses.length === 0) {
-    list.innerHTML = `<p class="text-slate-500 text-sm">No courses yet.</p>`;
+    list.innerHTML = `<p class="text-slate-500 text-sm">${t("teacher.dashboard.noCourses")}</p>`;
     return;
   }
 
@@ -70,14 +71,14 @@ export async function renderTeacherDashboard(container) {
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
           <div>
             <p class="font-medium text-slate-900">${escapeHtml(course.name)}</p>
-            <p class="text-sm text-slate-500">${course.studentIds.length} student${course.studentIds.length === 1 ? "" : "s"}</p>
+            <p class="text-sm text-slate-500">${t("common.studentCount", { count: course.studentIds.length })}</p>
           </div>
           <div class="flex shrink-0 flex-col gap-2">
             <button data-course-id="${course.id}" class="start-session-btn rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-              Start attendance session
+              ${t("teacher.dashboard.startSession")}
             </button>
             <a href="#/teacher/attendance?courseId=${course.id}" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">
-              View attendance
+              ${t("common.viewAttendance")}
             </a>
           </div>
         </div>

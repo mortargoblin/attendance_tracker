@@ -1,10 +1,11 @@
 import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
+import { t } from "../i18n.js";
 
 export async function renderStudentDashboard(container) {
   container.innerHTML = `
-    <h1 class="text-xl font-bold text-slate-900 mb-1">Your courses</h1>
-    <p class="text-sm text-slate-500 mb-4">Enter a course's attendance code, or check your attendance so far.</p>
+    <h1 class="text-xl font-bold text-slate-900 mb-1">${t("student.dashboard.heading")}</h1>
+    <p class="text-sm text-slate-500 mb-4">${t("student.dashboard.intro")}</p>
     <div id="course-list" class="space-y-3"></div>
   `;
 
@@ -19,16 +20,16 @@ export async function renderStudentDashboard(container) {
               <div class="flex shrink-0 flex-col gap-2">
                 <a href="#/student/confirm?courseId=${encodeURIComponent(c.id)}"
                    class="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-700">
-                  Enter code
+                  ${t("student.dashboard.enterCode")}
                 </a>
                 <a href="#/student/attendance?courseId=${encodeURIComponent(c.id)}"
                    class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">
-                  View attendance
+                  ${t("common.viewAttendance")}
                 </a>
               </div>
             </div>
           `
         )
         .join("")
-    : `<p class="text-slate-500 text-sm">You're not enrolled in any courses yet.</p>`;
+    : `<p class="text-slate-500 text-sm">${t("student.dashboard.noCourses")}</p>`;
 }

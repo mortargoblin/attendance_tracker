@@ -44,9 +44,10 @@ public final class Database {
     public static MariaDbPoolDataSource connect(String url, String user, String password) throws SQLException {
         MariaDbPoolDataSource pool = new MariaDbPoolDataSource();
         try {
-            pool.setUrl(url);
+            // Credentials first: setUrl() starts the pool, which would otherwise connect without them
             pool.setUser(user);
             pool.setPassword(password);
+            pool.setUrl(url);
             verify(url, user, pool::getConnection);
         } catch (SQLException e) {
             pool.close();

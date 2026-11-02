@@ -28,7 +28,7 @@ Reasoning behind the technologies: We chose to use the technologies that the lec
 | Frontend | Vanilla JavaScript (ES modules, hash router), Tailwind CSS 4, `serve` |
 | Testing | JUnit 5.12.2, H2 2.3.232 (in-memory, `MODE=MariaDB`), fastexcel-reader, JaCoCo 0.8.13 |
 | CI/CD & deployment | Jenkins (declarative `Jenkinsfile`), Docker (multi-stage `server/Dockerfile`), Docker Compose |
-| Localization | No resource bundles. The UI is English only. |
+| Localization | ECMAScript `Intl` API + a small custom `t()` lookup with JSON files per language (no library). UI in English, Finnish, Farsi (RTL), Japanese, Russian and Mongolian, see [`client/LOCALIZATION.md`](client/LOCALIZATION.md). |
 
 ## Design & development methodology
 
