@@ -1,0 +1,303 @@
+@startuml luokkakaavio_v2_A_kerrokset
+title Luokkakaavio v2 (A) – kerrokset, kontrollerit, rajapinnat ja tietokantakerros\nattendance_tracker.server.*
+
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam nodesep 25
+skinparam ranksep 70
+hide empty members
+hide <<record>> circle
+
+skinparam class {
+  BackgroundColor<<suunniteltu>> #FFF6D5
+  BorderColor<<suunniteltu>> #B08A00
+  BackgroundColor<<record>> #EEF4FB
+}
+
+legend top left
+  |= Merkintä |= Selitys |
+  | <<interface>> | rajapinta, jolle on tai voi tulla useita toteutuksia |
+  | <<suunniteltu>> (keltainen) | vaihtoehtoinen toteutus, ei vielä koodissa |
+  | katkoviiva + ontto kolmio | toteuttaa rajapinnan |
+  | yhtenäinen nuoli | pitää viittausta (konstruktori-injektio) |
+  | katkoviivanuoli | käyttää |
+  Kohdealueen luokat (User, Course, Session, ...) ja DTO:t: ks. kaavio (B).
+endlegend
+
+' =====================================================================
+package "app – käynnistys ja reititys" as app {
+  class App {
+    {static} +main(args: String[])
+    {static} ~resolvePort(env: String): int
+  }
+  class WebServer {
+    {static} +create(db: ConnectionSource): Javalin
+    {static} ~create(db, clock, bcryptCost, cors): Javalin
+    {static} ~corsOrigins(env: String): List<String>
+  }
+  class ApiError <<RuntimeException>> {
+    ~status: int
+    {static} +badRequest(msg): ApiError
+    {static} +unauthorized(msg): ApiError
+    {static} +forbidden(): ApiError
+    {static} +notFound(msg): ApiError
+    {static} +conflict(msg): ApiError
+  }
+  class Requests {
+    {static} +body(ctx, type: Class<T>): T
+    {static} +pathId(ctx, name, notFoundMsg): long
+  }
+  App ..> WebServer
+  WebServer ..> ApiError : virheenkäsittelijä
+}
+note top of WebServer
+  Kokoamispiste: luo repositoriot,
+  AuthGuardin, hasherin, generaattorit
+  ja exportterit ja antaa ne kontrollereille
+  konstruktorissa. (Ennen luokka "server".)
+end note
+
+' =====================================================================
+package "controller – Kontrollerit (HTTP-kerros)" as controller {
+  interface Controller <<interface>> {
+    +registerRoutes(app: Javalin)
+  }
+  class AuthController {
+    +register(ctx)
+    +login(ctx)
+    +logout(ctx)
+  }
+  class CourseController {
+    +listStudents(ctx)
+    +listCourses(ctx)
+    +createCourse(ctx)
+    +getCourse(ctx)
+  }
+  class SessionController {
+    -startLock: Object
+    +start(ctx)
+    +get(ctx)
+    +end(ctx)
+    +confirm(ctx)
+    +markManually(ctx)
+  }
+  class AttendanceController {
+    -exporters: Map<String, AttendanceExporter>
+    +get(ctx)
+    +export(ctx)
+  }
+  Controller <|.. AuthController
+  Controller <|.. CourseController
+  Controller <|.. SessionController
+  Controller <|.. AttendanceController
+}
+
+WebServer ..> Controller : registerRoutes()
+controller ..> Requests
+
+' =====================================================================
+package "security – Tunnistautuminen" as security {
+  class AuthGuard {
+    +require(ctx, roles: Role...): Principal
+    +revoke(ctx)
+    -bearerToken(ctx): String
+  }
+  class Principal <<record>> {
+    userId: long
+    role: Role
+  }
+  interface TokenStore <<interface>> {
+    +issue(p: Principal): String
+    +find(token: String): Optional<Principal>
+    +revoke(token: String)
+  }
+  class InMemoryTokenStore {
+    {static} TOKEN_TTL = 12 h
+    -tokens: Map<String, Entry>
+    -clock: Clock
+  }
+  class DatabaseTokenStore <<suunniteltu>> {
+    -db: ConnectionSource
+  }
+  class JwtTokenStore <<suunniteltu>> {
+    -secret: byte[]
+  }
+  interface PasswordHasher <<interface>> {
+    +hash(password): String
+    +verify(password, hash): boolean
+    +burnTime()
+    +fitsLimit(password): boolean
+  }
+  class BCryptPasswordHasher {
+    -cost: int = 12
+    -dummyHash: String
+  }
+  class Argon2PasswordHasher <<suunniteltu>>
+
+  AuthGuard --> TokenStore
+  AuthGuard ..> Principal
+  TokenStore <|.. InMemoryTokenStore
+  TokenStore <|.. DatabaseTokenStore
+  TokenStore <|.. JwtTokenStore
+  PasswordHasher <|.. BCryptPasswordHasher
+  PasswordHasher <|.. Argon2PasswordHasher
+}
+
+' =====================================================================
+package "service – Sovelluslogiikan apuluokat" as service {
+  interface CodeGenerator <<interface>> {
+    +generate(isTaken: Predicate<String>): String
+  }
+  class NumericCodeGenerator {
+    -digits: int = 2
+    -random: SecureRandom
+  }
+  class AlphanumericCodeGenerator {
+    -prefix: String
+    -length: int
+    -random: SecureRandom
+  }
+  CodeGenerator <|.. NumericCodeGenerator
+  CodeGenerator <|.. AlphanumericCodeGenerator
+}
+note bottom of NumericCodeGenerator
+  läsnäolokoodit 00–99
+  (503, jos kaikki käytössä)
+end note
+note bottom of AlphanumericCodeGenerator
+  kurssikoodit "C"+7 merkkiä;
+  myöhemmin pidemmät
+  läsnäolo-/QR-koodit
+end note
+
+' =====================================================================
+package "export – Raportit" as export {
+  interface AttendanceExporter <<interface>> {
+    +format(): String
+    +contentType(): String
+    +fileName(courseName: String): String
+    +export(report: AttendanceReport): byte[]
+  }
+  class XlsxAttendanceExporter {
+    -fills: Map<AttendanceStatus, String>
+  }
+  class CsvAttendanceExporter <<suunniteltu>>
+  class PdfAttendanceExporter <<suunniteltu>>
+  AttendanceExporter <|.. XlsxAttendanceExporter
+  AttendanceExporter <|.. CsvAttendanceExporter
+  AttendanceExporter <|.. PdfAttendanceExporter
+}
+
+' =====================================================================
+package "repository – Tietokantakerros (DAO)" as repository {
+  interface UserRepository <<interface>> {
+    +findById(id): Optional<User>
+    +findByEmail(email): Optional<User>
+    +emailExists(email): boolean
+    +usernameExists(username): boolean
+    +insert(user: User): long
+    +searchStudents(query, limit): List<User>
+    +countStudents(ids: Set<Long>): int
+  }
+  interface CourseRepository <<interface>> {
+    +findForTeacher(courseId, teacherId): Optional<Course>
+    +findForStudent(courseId, studentId): Optional<Course>
+    +listByTeacher(teacherId): List<Course>
+    +listByStudent(studentId): List<Course>
+    +nameExistsForTeacher(teacherId, name): boolean
+    +codeExists(code): boolean
+    +insertWithEnrollments(course, studentIds): long
+    +enrolledStudents(courseId): List<User>
+    +isEnrolled(courseId, studentId): boolean
+  }
+  interface SessionRepository <<interface>> {
+    +insert(session: Session): long
+    +findForTeacher(sessionId, teacherId): Optional<Session>
+    +findActiveByCode(courseId, code, now): Optional<Session>
+    +codeUsedInCourse(courseId, code): boolean
+    +activeCodes(now): Set<String>
+    +nextSeqNo(courseId): int
+    +endCode(sessionId, now)
+    +listByCourse(courseId): List<Session>
+  }
+  interface AttendanceRepository <<interface>> {
+    +presentSince(sessionId, studentId): Optional<LocalDateTime>
+    +markPresent(sessionId, studentId, at, via: MarkedVia)
+    +listPresent(sessionId): List<Attendance>
+    +listByCourse(courseId): List<Attendance>
+    +listByCourseAndStudent(courseId, studentId): List<Attendance>
+  }
+
+  class JdbcUserRepository
+  class JdbcCourseRepository
+  class JdbcSessionRepository
+  class JdbcAttendanceRepository
+
+  UserRepository <|.. JdbcUserRepository
+  CourseRepository <|.. JdbcCourseRepository
+  SessionRepository <|.. JdbcSessionRepository
+  AttendanceRepository <|.. JdbcAttendanceRepository
+
+  class JdbcSupport {
+    {static} +exists(c, sql, params...): boolean
+    {static} +generatedId(ps): long
+    {static} +inTransaction(db, work): T
+  }
+  interface ConnectionSource <<interface>> {
+    +open(): Connection
+  }
+  class Database {
+    {static} +connect(): MariaDbPoolDataSource
+    {static} +connect(url, user, pw): MariaDbPoolDataSource
+    {static} ~verify(url, user, source)
+    {static} ~closeQuietly(resource)
+  }
+
+  JdbcUserRepository --> ConnectionSource
+  JdbcCourseRepository --> ConnectionSource
+  JdbcSessionRepository --> ConnectionSource
+  JdbcAttendanceRepository --> ConnectionSource
+  JdbcUserRepository ..> JdbcSupport
+  JdbcCourseRepository ..> JdbcSupport
+  JdbcSessionRepository ..> JdbcSupport
+  JdbcAttendanceRepository ..> JdbcSupport
+  Database ..> ConnectionSource : pool::getConnection
+}
+note bottom of ConnectionSource
+  Vaihtoehtoiset toteutukset:
+  • MariaDB-pooli (tuotanto)
+  • H2-muistikanta / FakeConnection (testit)
+  Repositorioille: InMemory*Repository
+  yksikkötesteihin, Postgres*Repository
+  jos tietokanta vaihtuu.
+end note
+
+App ..> Database : connect()
+
+' =====================================================================
+' Kontrollerien riippuvuudet (vain rajapintoihin + AuthGuard)
+AuthController --> UserRepository
+AuthController --> PasswordHasher
+AuthController --> TokenStore : issue()
+AuthController --> AuthGuard
+
+CourseController --> CourseRepository
+CourseController --> UserRepository
+CourseController --> CodeGenerator : kurssikoodi
+CourseController --> AuthGuard
+
+SessionController --> SessionRepository
+SessionController --> CourseRepository
+SessionController --> AttendanceRepository
+SessionController --> CodeGenerator : läsnäolokoodi
+SessionController --> AuthGuard
+
+AttendanceController --> CourseRepository
+AttendanceController --> SessionRepository
+AttendanceController --> AttendanceRepository
+AttendanceController --> AttendanceExporter
+AttendanceController --> AuthGuard
+
+@enduml

@@ -1,0 +1,233 @@
+@startuml luokkakaavio_v2_B_kohdealue
+title Luokkakaavio v2 (B) – kohdealue (domain) ja tiedonsiirto-oliot (controller.dto)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle folder
+skinparam shadowing false
+hide empty members
+hide <<record>> circle
+skinparam class {
+  BackgroundColor<<record>> #EEF4FB
+}
+
+' =====================================================================
+package "domain – Kohdealue" as domain {
+  class User {
+    -id: long
+    -username: String
+    -email: String
+    -passwordHash: String
+    -firstName: String
+    -lastName: String
+    -role: Role
+    -createdAt: LocalDateTime
+    +fullName(): String
+  }
+  enum Role {
+    STUDENT
+    TEACHER
+    ADMIN
+  }
+  class Course {
+    -id: long
+    -code: String
+    -name: String
+    -description: String
+    -startDate: LocalDate
+    -endDate: LocalDate
+    -requiredAttendancePct: int
+    -teacherId: long
+  }
+  class Enrollment {
+    -id: long
+    -studentId: long
+    -courseId: long
+    -enrolledAt: LocalDateTime
+    -status: EnrollmentStatus
+  }
+  enum EnrollmentStatus {
+    ACTIVE
+    COMPLETED
+    DROPPED
+  }
+  class Session {
+    -id: long
+    -courseId: long
+    -seqNo: int
+    -topic: String
+    -startsAt: LocalDateTime
+    -endsAt: LocalDateTime
+    -room: String
+    -attendanceCode: String
+    -codeExpiresAt: LocalDateTime
+    +status(now): SessionStatus
+    +isActive(now): boolean
+  }
+  enum SessionStatus {
+    ACTIVE
+    ENDED
+    EXPIRED
+  }
+  class Attendance {
+    -id: long
+    -sessionId: long
+    -studentId: long
+    -status: AttendanceStatus
+    -markedAt: LocalDateTime
+    -markedVia: MarkedVia
+    +countsAsAttended(): boolean
+  }
+  enum AttendanceStatus {
+    PRESENT
+    LATE
+    ABSENT
+    EXCUSED
+  }
+  enum MarkedVia {
+    CODE
+    TEACHER
+    IMPORT
+  }
+  class AttendanceReport {
+    -course: Course
+    -sessions: List<Session>
+    -students: List<User>
+    -statuses: Map<Long, Map<Long, AttendanceStatus>>
+    +status(studentId, sessionId): AttendanceStatus
+    +attended(studentId): int
+    +attendancePct(studentId): double
+    +meetsRequirement(studentId): boolean
+  }
+
+  User --> Role
+  User "1" -- "*" Course : opettaa >
+  User "1" -- "*" Enrollment : ilmoittautuu >
+
+  Course "1" -- "*" Enrollment
+  Enrollment --> EnrollmentStatus
+  Course "1" *-- "*" Session : koostuu >
+  Session --> SessionStatus
+  Session "1" -- "*" Attendance
+  User "1" -- "*" Attendance : osallistuu >
+
+  Attendance --> AttendanceStatus
+  Attendance --> MarkedVia
+  AttendanceReport o-- "1" Course
+  AttendanceReport o-- "*" Session
+  AttendanceReport o-- "*" User
+}
+
+note top of Session
+  status(now):
+  ACTIVE jos now < codeExpiresAt,
+  muuten EXPIRED jos koodi ehti vanhentua,
+  ENDED jos opettaja lopetti aiemmin.
+end note
+
+' =====================================================================
+package "controller.dto – Tiedonsiirto-oliot (JSON)" as dto {
+  package "auth" as dauth {
+    class RegisterRequest <<record>> {
+      name: String
+      email: String
+      password: String
+      role: String
+    }
+    class LoginRequest <<record>> {
+      email: String
+      password: String
+    }
+    class AuthResponse <<record>> {
+      token: String
+      user: UserDto
+    }
+    class UserDto <<record>> {
+      id: long
+      name: String
+      email: String
+      role: String
+    }
+    AuthResponse --> UserDto
+    RegisterRequest -[hidden]- LoginRequest
+  }
+  package "course" as dcourse {
+    class CreateCourseRequest <<record>> {
+      name: String
+      studentIds: List<Long>
+    }
+    class CourseDto <<record>> {
+      id: long
+      name: String
+      teacherId: long
+      studentIds: List<Long>
+    }
+    class CourseDetailDto <<record>> {
+      id: long
+      name: String
+      students: List<UserDto>
+    }
+    CreateCourseRequest -[hidden]- CourseDto
+  }
+  package "session" as dsession {
+    class SessionDto <<record>> {
+      id: long
+      courseId: long
+      code: String
+      status: String
+      createdAt: long
+      expiresAt: Long
+      confirmations: List<Confirmation>
+    }
+    class Confirmation <<record>> {
+      studentId: long
+      confirmedAt: long
+    }
+    class ConfirmRequest <<record>> {
+      code: String
+    }
+    class ConfirmResponse <<record>> {
+      courseName: String
+      confirmedAt: long
+      alreadyConfirmed: boolean
+    }
+    SessionDto *-- "*" Confirmation
+    ConfirmRequest -[hidden]- ConfirmResponse
+  }
+  package "attendance" as dattendance {
+    class AttendanceDto <<record>> {
+      courseId: long
+      courseName: String
+      sessions: List<SessionColumn>
+      students: List<StudentRow>
+    }
+    class SessionColumn <<record>> {
+      id: long
+      seqNo: int
+      startedAt: long
+    }
+    class StudentRow <<record>> {
+      id: long
+      name: String
+      email: String
+      statuses: List<String>
+      attended: int
+    }
+    AttendanceDto *-- "*" SessionColumn
+    AttendanceDto *-- "*" StudentRow
+  }
+  CourseDetailDto --> "*" UserDto
+  ' 2x2-ruudukko: auth+course ylhäällä, session+attendance alhaalla
+  LoginRequest -[hidden]down- SessionDto
+  CourseDto -[hidden]down- AttendanceDto
+}
+
+note bottom of dto
+  Kontrollerit muuntavat kohdealueen olioita DTO:iksi
+  (esim. User → UserDto, Session → SessionDto,
+  AttendanceReport → AttendanceDto). DTO:t eivät
+  sisällä logiikkaa eivätkä salasanatiivistettä.
+end note
+
+domain -[hidden]right- dto
+
+@enduml

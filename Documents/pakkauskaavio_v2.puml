@@ -1,0 +1,53 @@
+@startuml pakkauskaavio_v2
+title Pakkaukset ja kerrokset v2 – Attendance Tracker
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+package "client (JavaScript SPA)" {
+  folder "**pages/**\nlogin, register, student-*,\nteacher-*" as cpages
+  folder "**api.js · store.js · router.js · i18n.js**" as cinfra
+}
+
+package "server – attendance_tracker.server" {
+  folder "**app**\nApp, WebServer,\nApiError, Requests" as app
+  folder "**controller**\nAuth-, Course-, Session-,\nAttendanceController" as controller
+  folder "**controller.dto**\nrequest/response-recordit" as dto
+  folder "**security**\nAuthGuard, TokenStore,\nPasswordHasher, Principal" as security
+  folder "**service**\nCodeGenerator" as service
+  folder "**export**\nAttendanceExporter" as export
+  folder "**repository**\nConnectionSource, *Repository,\nJdbc*Repository, Database" as repository
+  folder "**domain**\nUser, Course, Session,\nEnrollment, Attendance,\nAttendanceReport, enumit" as domain
+}
+
+database "MariaDB\nattendance_tracker" as db
+
+cpages ..> cinfra
+cinfra ..> app : REST / JSON\n(HTTP + Bearer-token)
+
+app ..> controller : reitit
+app ..> repository : luo yhteyspoolin
+controller ..> dto
+controller ..> security
+controller ..> service
+controller ..> export
+controller ..> repository
+controller ..> domain
+security ..> domain
+export ..> domain
+repository ..> domain
+repository ..> db : JDBC
+
+note right of controller
+  Kontrollerit tuntevat vain rajapinnat
+  (UserRepository, TokenStore, PasswordHasher,
+  CodeGenerator, AttendanceExporter).
+  Ne eivät kirjoita SQL:ää.
+end note
+
+note right of repository
+  Ainoa pakkaus, joka käyttää
+  java.sql-luokkia ja SQL-lauseita.
+end note
+
+@enduml
