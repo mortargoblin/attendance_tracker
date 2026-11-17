@@ -89,4 +89,4 @@ try {
 }
 langSelect.value = getLanguage();
 window.addEventListener("hashchange", route);
-route();
+route().catch(console.error);

@@ -117,8 +117,10 @@ export function formatPercent(ratio) {
   return new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 }).format(ratio);
 }
 
+const DEFAULT_DATE_OPTIONS = { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" };
+
 /** @param {number} ms since epoch @param {Intl.DateTimeFormatOptions} [options] */
-export function formatDate(ms, options = { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) {
+export function formatDate(ms, options = DEFAULT_DATE_OPTIONS) {
   return new Intl.DateTimeFormat(lang, options).format(new Date(ms));
 }
 

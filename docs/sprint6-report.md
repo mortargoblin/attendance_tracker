@@ -121,11 +121,11 @@ Regenerate after a change: `plantuml -tpng -tsvg docs/diagrams/*.puml`.
 
 ## 7. Contributions
 
-| Team member   | Assigned tasks                                                  | Time spent (hrs) | In-class tasks |
-|---------------|-----------------------------------------------------------------|:----------------:| --- |
+| Team member   | Assigned tasks                                                                    | Time spent (hrs) | In-class tasks |
+|---------------|-----------------------------------------------------------------------------------|:----------------:| --- |
 | Aaro Saarinen | Code cleanup, Static code review, Acceptance test plan, DB localization, Diagrams |        3         | _Submitted_ |
-| Tom Laukkanen | SonarCube analysis |        2         | _Submitted_ |
-| Sampo Westman | localization overview, Detecting errors with sonarscanner       |        1         | _Submitted_ |
+| Tom Laukkanen | SonarCube analysis                                                                |        2         | _Submitted_ |
+| Sampo Westman | localization overview, Detecting errors with sonarqube, refactoring               |        2         | _Submitted_ |
 
 *Hours are the estimates from the sprint plan. Replace them with the actual hours, and fill in the in-class task status, before the review.*
 
