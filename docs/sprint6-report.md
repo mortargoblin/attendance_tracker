@@ -5,12 +5,12 @@ and refactoring, and prepare for acceptance by planning acceptance tests.
 **Duration:** 2 weeks. **Plan:** `Documents/Sprint6plan.docx`.
 
 | # | Deliverable | Points | Status | Where |
-| --- | --- | :-: | --- | --- |
-| 1 | Database localization | 3 | ✅ Done | [`docs/database-localization.md`](database-localization.md), [`database_localization.sql`](../database_localization.sql), README *Database localization* |
-| 2 | Static code review (SonarQube) | 3 | ⏳ Separate deliverable | Section 2 below |
-| 3 | Code clean-up and refactoring | 2 | ✅ Done (client) | Section 3 below |
-| 4 | Acceptance test plan | 1 | ✅ Done | [`docs/acceptance-test-plan.md`](acceptance-test-plan.md) |
-| 5 | Architecture design documentation | 1 | ✅ Done | [`docs/diagrams/`](diagrams/) |
+| --- | --- |:------:| --- | --- |
+| 1 | Database localization |   3    | ✅ Done | [`docs/database-localization.md`](database-localization.md), [`database_localization.sql`](../database_localization.sql), README *Database localization* |
+| 2 | Static code review (SonarQube) |   4    | ⏳ Separate deliverable | Section 2 below |
+| 3 | Code clean-up and refactoring |   2    | ✅ Done (client) | Section 3 below |
+| 4 | Acceptance test plan |   1    | ✅ Done | [`docs/acceptance-test-plan.md`](acceptance-test-plan.md) |
+| 5 | Architecture design documentation |   1    | ✅ Done | [`docs/diagrams/`](diagrams/) |
 
 ---
 
@@ -121,10 +121,11 @@ Regenerate after a change: `plantuml -tpng -tsvg docs/diagrams/*.puml`.
 
 ## 7. Contributions
 
-| Team member | Assigned tasks | Time spent (hrs) | In-class tasks |
-| --- | --- | :-: | --- |
-| Aaro Saarinen | 2. Static code review, 4. Acceptance test plan, DB localization | 3 | _Submitted_ |
-| Tom Laukkanen | 3. Code clean-up and refactoring, 5. Architecture docs | 2 | _Submitted_ |
+| Team member   | Assigned tasks                                                  | Time spent (hrs) | In-class tasks |
+|---------------|-----------------------------------------------------------------|:----------------:| --- |
+| Aaro Saarinen | 2. Static code review, 4. Acceptance test plan, DB localization |        3         | _Submitted_ |
+| Tom Laukkanen | 3. Code clean-up and refactoring, 5. Architecture docs          |        2         | _Submitted_ |
+| Sampo Westman | localization overview, Detecting errors with sonarscanner       |        1         | _Submitted_ |
 
 *Hours are the estimates from the sprint plan. Replace them with the actual hours, and fill in the in-class task status, before the review.*
 
