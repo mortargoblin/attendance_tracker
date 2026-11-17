@@ -37,11 +37,7 @@ Summary (full plan, design choices and validation output in
 
 ## 2. Statistical code review
 
-Static analysis with SonarQube/SonarScanner, with metrics (cyclomatic complexity, lines per method,
-duplication), is a separate deliverable owned by Aaro (Sprint 6 plan, task 2) and is not part of this
-report revision. *Add the SonarQube report, screenshots and findings here.*
-
-The clean-up in section 3 used the manual review findings below, which a SonarQube run should confirm.
+Sonarcube report presented by Tom
 
 ## 3. Code clean-up and refactoring (client)
 
