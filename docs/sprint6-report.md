@@ -7,7 +7,7 @@ and refactoring, and prepare for acceptance by planning acceptance tests.
 | # | Deliverable | Points | Status | Where |
 | --- | --- |:------:| --- | --- |
 | 1 | Database localization |   3    | ✅ Done | [`docs/database-localization.md`](database-localization.md), [`database_localization.sql`](../database_localization.sql), README *Database localization* |
-| 2 | Static code review (SonarQube) |   4    | ⏳ Separate deliverable | Section 2 below |
+| 2 | Static code review (SonarQube) |   4    | ✅ Done | Section 2 below |
 | 3 | Code clean-up and refactoring |   2    | ✅ Done (client) | Section 3 below |
 | 4 | Acceptance test plan |   1    | ✅ Done | [`docs/acceptance-test-plan.md`](acceptance-test-plan.md) |
 | 5 | Architecture design documentation |   1    | ✅ Done | [`docs/diagrams/`](diagrams/) |
