@@ -2,79 +2,97 @@ import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
 import { STATUSES, badge } from "../attendance-status.js";
 import { t, formatDate, formatPercent } from "../i18n.js";
+import { backLink, showMessage, hideMessage, downloadBlob } from "../ui.js";
 
+// the table needs more room than the other pages
+const NARROW = "sm:max-w-lg";
+const WIDE = "sm:max-w-4xl";
+
+/** a session's column header: its number with the date underneath */
+function sessionHeader(session) {
+  const date = escapeHtml(formatDate(session.startedAt));
+  return `
+    <th class="px-2 py-2 text-center font-medium whitespace-nowrap" title="${date}">
+      ${t("teacher.attendance.sessionColumn", { n: session.seqNo })}<div class="text-xs font-normal text-slate-400">${date}</div>
+    </th>
+  `;
+}
+
+/** one status as a coloured one-character badge, full label on hover */
+function statusCell(status) {
+  const b = badge(status);
+  return `<td class="px-2 py-2 text-center">
+            <span title="${escapeHtml(b.label)}" class="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-medium ${b.classes}">${b.short}</span>
+          </td>`;
+}
+
+/** a student's row: name, a cell per session, then attended/total (percent) */
+function studentRow(student, sessionCount) {
+  const percent = sessionCount === 0 ? "–" : formatPercent(student.attended / sessionCount);
+  return `
+    <tr>
+      <td class="sticky start-0 bg-white py-2 pe-3 whitespace-nowrap text-slate-800">${escapeHtml(student.name)}</td>
+      ${student.statuses.map(statusCell).join("")}
+      <td class="py-2 ps-3 text-end whitespace-nowrap text-slate-800">
+        ${t("teacher.attendance.attendedOf", { attended: student.attended, total: sessionCount })}
+        <span class="text-slate-400">(${percent})</span>
+      </td>
+    </tr>
+  `;
+}
+
+/** what each badge means, under the table */
+function legend() {
+  const items = STATUSES.map((status) => {
+    const b = badge(status);
+    return `<span class="inline-flex items-center gap-1">
+              <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-medium ${b.classes}">${b.short}</span>${b.label}
+            </span>`;
+  });
+  return `<p class="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">${items.join("")}</p>`;
+}
+
+/**
+ * the students x sessions table, or a note if either list is empty. it uses
+ * logical classes (ps/pe, start-0, text-start/end), so in a right-to-left
+ * language the student column sticks to the right and the total column ends
+ * up on the left.
+ */
+function attendanceTable(sessions, students) {
+  if (students.length === 0) return `<p class="text-slate-500 text-sm">${t("teacher.attendance.noStudents")}</p>`;
+  if (sessions.length === 0) return `<p class="text-slate-500 text-sm">${t("teacher.attendance.noSessions")}</p>`;
+  return `
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 text-start text-slate-500">
+            <th class="sticky start-0 bg-white py-2 pe-3 text-start font-medium">${t("teacher.attendance.student")}</th>
+            ${sessions.map(sessionHeader).join("")}
+            <th class="py-2 ps-3 text-end font-medium">${t("teacher.attendance.total")}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          ${students.map((student) => studentRow(student, sessions.length)).join("")}
+        </tbody>
+      </table>
+    </div>
+    ${legend()}
+  `;
+}
+
+/**
+ * the teacher's attendance overview for one course, with excel export.
+ * @param {HTMLElement} container
+ * @param {URLSearchParams} params courseId
+ * @returns {Promise<() => void>} cleanup: puts the usual page width back
+ */
 export async function renderTeacherAttendance(container, params) {
   const courseId = params.get("courseId");
   const report = await api.getCourseAttendance(courseId);
   const { sessions, students } = report;
 
-  const percent = (student) => (sessions.length === 0 ? "–" : formatPercent(student.attended / sessions.length));
-
-  // the table uses logical classes (ps/pe, start-0, text-start/end) so in a
-  // right-to-left language the student column sticks to the right and the
-  // total column ends up on the left
-  let table;
-  if (students.length === 0) {
-    table = `<p class="text-slate-500 text-sm">${t("teacher.attendance.noStudents")}</p>`;
-  } else if (sessions.length === 0) {
-    table = `<p class="text-slate-500 text-sm">${t("teacher.attendance.noSessions")}</p>`;
-  } else {
-    table = `
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b border-slate-200 text-start text-slate-500">
-              <th class="sticky start-0 bg-white py-2 pe-3 text-start font-medium">${t("teacher.attendance.student")}</th>
-              ${sessions
-                .map(
-                  (s) => `
-                    <th class="px-2 py-2 text-center font-medium whitespace-nowrap" title="${escapeHtml(formatDate(s.startedAt))}">
-                      ${t("teacher.attendance.sessionColumn", { n: s.seqNo })}<div class="text-xs font-normal text-slate-400">${escapeHtml(formatDate(s.startedAt))}</div>
-                    </th>
-                  `
-                )
-                .join("")}
-              <th class="py-2 ps-3 text-end font-medium">${t("teacher.attendance.total")}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            ${students
-              .map(
-                (student) => `
-                  <tr>
-                    <td class="sticky start-0 bg-white py-2 pe-3 whitespace-nowrap text-slate-800">${escapeHtml(student.name)}</td>
-                    ${student.statuses
-                      .map((status) => {
-                        const b = badge(status);
-                        return `<td class="px-2 py-2 text-center">
-                                  <span title="${escapeHtml(b.label)}" class="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-medium ${b.classes}">${b.short}</span>
-                                </td>`;
-                      })
-                      .join("")}
-                    <td class="py-2 ps-3 text-end whitespace-nowrap text-slate-800">
-                      ${t("teacher.attendance.attendedOf", { attended: student.attended, total: sessions.length })}
-                      <span class="text-slate-400">(${percent(student)})</span>
-                    </td>
-                  </tr>
-                `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
-      <p class="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-        ${STATUSES.map((status) => {
-          const b = badge(status);
-          return `<span class="inline-flex items-center gap-1">
-                    <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-medium ${b.classes}">${b.short}</span>${b.label}
-                  </span>`;
-        }).join("")}
-      </p>
-    `;
-  }
-
   container.innerHTML = `
-    <a href="#/teacher" class="text-sm text-indigo-600 hover:underline"><span class="inline-block rtl:-scale-x-100">&larr;</span> ${t("common.backToCourses")}</a>
+    ${backLink("#/teacher")}
     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-4">
       <div class="flex items-center justify-between gap-4 mb-4">
         <div>
@@ -87,36 +105,28 @@ export async function renderTeacherAttendance(container, params) {
           ${t("teacher.attendance.export")}
         </button>
       </div>
-      ${table}
-      <p id="message" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" hidden></p>
+      ${attendanceTable(sessions, students)}
+      <p id="message" class="mt-3" hidden></p>
     </div>
   `;
 
-  // the table needs more room than the other pages; the returned cleanup
-  // puts the usual width back when the router leaves this page
-  container.classList.replace("sm:max-w-lg", "sm:max-w-4xl");
+  container.classList.replace(NARROW, WIDE);
 
   const exportBtn = container.querySelector("#export-btn");
   const message = container.querySelector("#message");
 
   exportBtn.addEventListener("click", async () => {
     exportBtn.disabled = true;
-    message.hidden = true;
+    hideMessage(message);
     try {
       const blob = await api.exportCourseAttendance(courseId);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = t("teacher.attendance.exportFilename", { course: report.courseName });
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, t("teacher.attendance.exportFilename", { course: report.courseName }));
     } catch (err) {
-      message.textContent = err.message;
-      message.hidden = false;
+      showMessage(message, err.message);
     } finally {
       exportBtn.disabled = false;
     }
   });
 
-  return () => container.classList.replace("sm:max-w-4xl", "sm:max-w-lg");
+  return () => container.classList.replace(WIDE, NARROW);
 }

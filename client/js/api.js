@@ -6,13 +6,19 @@
 // page; set window.API_BASE before the scripts load to point elsewhere.
 
 import { getSession, clearSession } from "./store.js";
-import { t, translateServerError } from "./i18n.js";
+import { t, translateServerError, getLanguage } from "./i18n.js";
 
 const API_BASE = window.API_BASE ?? `${location.protocol}//${location.hostname}:3000`;
 
 // sends a request with the login token attached and returns the parsed json
 // body (or null for an empty response). throws Error(<server message>) when
 // the response isn't ok.
+/**
+ * @param {"GET" | "POST"} method
+ * @param {string} path e.g. "/api/courses"
+ * @param {object} [body] sent as json
+ * @returns {Promise<any>}
+ */
 async function request(method, path, body) {
   const text = await (await send(method, path, body)).text();
   return text ? JSON.parse(text) : null;
@@ -20,8 +26,13 @@ async function request(method, path, body) {
 
 // like request() but hands back the raw response for non-json bodies such as
 // file downloads. errors are handled the same way.
+/** @returns {Promise<Response>} */
 async function send(method, path, body) {
-  const headers = {};
+  // accept-language carries the ui language so the server can pick the
+  // matching row from the database's translation tables (see
+  // docs/database-localization.md). it is a cors-safelisted header, so it
+  // adds no preflight request.
+  const headers = { "Accept-Language": acceptLanguage(getLanguage()) };
   const session = getSession();
   if (session) headers.Authorization = `Bearer ${session.token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -53,6 +64,14 @@ async function send(method, path, body) {
     throw new Error(data?.error ? translateServerError(data.error) : t("errors.requestFailed", { status: response.status }));
   }
   return response;
+}
+
+/**
+ * the ui language first, english as the fallback, e.g. "fi" -> "fi, en;q=0.5".
+ * @param {string} lang
+ */
+export function acceptLanguage(lang) {
+  return lang === "en" ? "en" : `${lang}, en;q=0.5`;
 }
 
 // --- auth ---

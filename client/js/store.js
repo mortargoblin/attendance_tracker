@@ -7,6 +7,7 @@
 
 const KEY = "att_auth";
 
+/** @returns {{ token: string, user: { id: number, name: string, email: string, role: string } } | null} */
 export function getSession() {
   try {
     const raw = sessionStorage.getItem(KEY);
@@ -16,15 +17,18 @@ export function getSession() {
   }
 }
 
+/** keeps only the fields the ui needs from a login/register response */
 export function setSession({ token, user }) {
   const { id, name, email, role } = user;
   sessionStorage.setItem(KEY, JSON.stringify({ token, user: { id, name, email, role } }));
 }
 
+/** forgets the login in this tab (the server token is revoked separately by api.logout) */
 export function clearSession() {
   sessionStorage.removeItem(KEY);
 }
 
+/** @returns {{ id: number, name: string, email: string, role: string } | null} */
 export function getCurrentUser() {
   return getSession()?.user ?? null;
 }

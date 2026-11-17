@@ -2,7 +2,9 @@ import * as api from "../api.js";
 import { setSession } from "../store.js";
 import { navigate } from "../router.js";
 import { t } from "../i18n.js";
+import { showMessage, hideMessage } from "../ui.js";
 
+/** the sign-up form; on success the new account is logged in straight away. @param {HTMLElement} container */
 export async function renderRegister(container) {
   container.innerHTML = `
     <h1 class="text-2xl font-bold text-slate-900 text-center mb-6">${t("app.title")}</h1>
@@ -42,7 +44,7 @@ export async function renderRegister(container) {
 
   container.querySelector("#register-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    message.hidden = true;
+    hideMessage(message);
     try {
       const { token, user } = await api.register({
         name: container.querySelector("#name").value.trim(),
@@ -53,8 +55,7 @@ export async function renderRegister(container) {
       setSession({ token, user });
       navigate(`/${user.role}`);
     } catch (err) {
-      message.textContent = err.message;
-      message.hidden = false;
+      showMessage(message, err.message);
     }
   });
 }

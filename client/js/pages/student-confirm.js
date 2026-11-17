@@ -1,13 +1,25 @@
 import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
-import { t, formatTime } from "../i18n.js";
+import { t, formatTime, toAsciiDigits } from "../i18n.js";
+import { backLink, showMessage, hideMessage } from "../ui.js";
 
-// persian (۰-۹) and arabic-indic (٠-٩) digits typed on a farsi/arabic
-// keyboard are turned into 0-9, since the server compares plain ascii codes
-function toAsciiDigits(value) {
-  return value.replace(/[۰-۹٠-٩]/g, (d) => String(d.charCodeAt(0) & 0xf));
+/** codes are two digits; the server compares them as ascii strings */
+const CODE_LENGTH = 2;
+
+/**
+ * keeps only ascii digits (after converting persian/arabic ones), at most
+ * CODE_LENGTH of them.
+ * @param {string} value what the student typed
+ */
+export function normalizeCode(value) {
+  return toAsciiDigits(value).replace(/\D/g, "").slice(0, CODE_LENGTH);
 }
 
+/**
+ * where a student types the code their teacher shows for a course.
+ * @param {HTMLElement} container
+ * @param {URLSearchParams} params courseId
+ */
 export async function renderConfirm(container, params) {
   const courseId = params.get("courseId");
   // students can only look up their own courses, so find it in that list
@@ -15,42 +27,38 @@ export async function renderConfirm(container, params) {
   if (!course) throw new Error(t("server.courseNotFound"));
 
   container.innerHTML = `
-    <a href="#/student" class="text-sm text-indigo-600 hover:underline"><span class="inline-block rtl:-scale-x-100">&larr;</span> ${t("common.backToCourses")}</a>
+    ${backLink("#/student")}
     <form id="confirm-form" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-4 space-y-4 text-center">
       <p class="text-sm text-slate-500">${escapeHtml(course.name)}</p>
       <label for="code" class="text-lg font-semibold text-slate-900 block">${t("student.confirm.prompt")}</label>
       <input
         class="w-full max-w-[12rem] mx-auto rounded-xl border-2 border-slate-300 px-4 py-4 text-center text-4xl font-mono tracking-[0.4em]"
-        type="text" id="code" dir="ltr" inputmode="numeric" pattern="[0-9]{2}" maxlength="2" placeholder="00" autocomplete="off" required
+        type="text" id="code" dir="ltr" inputmode="numeric" pattern="[0-9]{${CODE_LENGTH}}" maxlength="${CODE_LENGTH}" placeholder="00" autocomplete="off" required
       >
       <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">${t("student.confirm.submit")}</button>
-      <p id="message" hidden></p>
+      <p id="message" class="mt-2" hidden></p>
     </form>
   `;
 
+  const form = container.querySelector("#confirm-form");
   const codeInput = container.querySelector("#code");
   const message = container.querySelector("#message");
 
   codeInput.addEventListener("input", () => {
-    codeInput.value = toAsciiDigits(codeInput.value).replace(/\D/g, "").slice(0, 2);
+    codeInput.value = normalizeCode(codeInput.value);
   });
 
-  container.querySelector("#confirm-form").addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    message.hidden = true;
+    hideMessage(message);
     try {
-      const result = await api.confirmAttendanceByCode(course.id, codeInput.value.padStart(2, "0"));
-      const params = { course: result.courseName, time: formatTime(result.confirmedAt) };
-      message.className = "mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700";
-      message.textContent = result.alreadyConfirmed
-        ? t("student.confirm.alreadyConfirmed", params)
-        : t("student.confirm.confirmed", params);
-      message.hidden = false;
-      container.querySelector("#confirm-form").reset();
+      const result = await api.confirmAttendanceByCode(course.id, codeInput.value.padStart(CODE_LENGTH, "0"));
+      const textParams = { course: result.courseName, time: formatTime(result.confirmedAt) };
+      const key = result.alreadyConfirmed ? "student.confirm.alreadyConfirmed" : "student.confirm.confirmed";
+      showMessage(message, t(key, textParams), "success");
+      form.reset();
     } catch (err) {
-      message.className = "mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700";
-      message.textContent = err.message;
-      message.hidden = false;
+      showMessage(message, err.message);
     }
   });
 }

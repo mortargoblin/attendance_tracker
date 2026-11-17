@@ -2,6 +2,10 @@ import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
 import { t } from "../i18n.js";
 
+/**
+ * the student's courses, each with "enter code" and "view attendance".
+ * @param {HTMLElement} container
+ */
 export async function renderStudentDashboard(container) {
   container.innerHTML = `
     <h1 class="text-xl font-bold text-slate-900 mb-1">${t("student.dashboard.heading")}</h1>

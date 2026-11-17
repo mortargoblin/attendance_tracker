@@ -7,7 +7,9 @@
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./css/output.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./css/output.css --watch",
-    "serve": "npx --yes serve . -l tcp://127.0.0.1:1337"
+    "serve": "npx --yes serve . -l tcp://127.0.0.1:1337",
+    "test": "node --test \"test/*.test.js\"",
+    "lint": "npx --yes eslint@9 ."
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

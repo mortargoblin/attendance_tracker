@@ -1,0 +1,132 @@
+@startuml er-diagram
+' ER diagram of the attendance_tracker database: attendance_tracker_v2.sql
+' (core tables) + database_localization.sql (localization tables, in blue).
+' Render: plantuml -tpng -tsvg docs/diagrams/er-diagram.puml
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Sans
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+  ArrowColor #475569
+}
+skinparam class<<l10n>> {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+}
+title attendance_tracker — ER diagram (Sprint 6)
+
+entity "users" as users {
+  * user_id : INT UNSIGNED <<PK>>
+  --
+  * username : VARCHAR(64) <<UQ>>
+  * email : VARCHAR(255) <<UQ>>
+  * password_hash : CHAR(60)
+  * first_name : VARCHAR(80)
+  * last_name : VARCHAR(80)
+  * role : ENUM(STUDENT, TEACHER, ADMIN)
+  * created_at : DATETIME
+}
+
+entity "courses" as courses {
+  * course_id : INT UNSIGNED <<PK>>
+  --
+  * course_code : VARCHAR(20) <<UQ>>
+  * name : VARCHAR(160)
+  description : TEXT
+  * start_date : DATE
+  * end_date : DATE
+  * required_attendance_pct : TINYINT
+  * teacher_id : INT UNSIGNED <<FK>>
+}
+
+entity "sessions" as sessions {
+  * session_id : INT UNSIGNED <<PK>>
+  --
+  * course_id : INT UNSIGNED <<FK>>
+  * seq_no : SMALLINT <<UQ with course_id>>
+  topic : VARCHAR(160)
+  * starts_at : DATETIME
+  * ends_at : DATETIME
+  room : VARCHAR(40)
+  attendance_code : VARCHAR(10)
+  code_expires_at : DATETIME
+}
+
+entity "enrollments" as enrollments {
+  * enrollment_id : INT UNSIGNED <<PK>>
+  --
+  * student_id : INT UNSIGNED <<FK>>
+  * course_id : INT UNSIGNED <<FK>>
+  * enrolled_at : DATETIME
+  * status : ENUM(ACTIVE, COMPLETED, DROPPED)
+}
+
+entity "attendances" as attendances {
+  * attendance_id : INT UNSIGNED <<PK>>
+  --
+  * session_id : INT UNSIGNED <<FK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * status : ENUM(PRESENT, LATE, ABSENT, EXCUSED)
+  * marked_at : DATETIME
+  * marked_via : ENUM(CODE, TEACHER, IMPORT)
+}
+
+entity "languages" as languages <<l10n>> {
+  * lang_code : VARCHAR(10) <<PK>>
+  --
+  * native_name : VARCHAR(40)
+  * english_name : VARCHAR(40)
+  * text_direction : ENUM(LTR, RTL)
+  * collation_name : VARCHAR(64)
+  * is_default : BOOLEAN
+  * sort_order : TINYINT
+}
+
+entity "course_translations" as course_tr <<l10n>> {
+  * course_id : INT UNSIGNED <<PK, FK>>
+  * lang_code : VARCHAR(10) <<PK, FK>>
+  --
+  * name : VARCHAR(160)
+  description : TEXT
+}
+
+entity "session_translations" as session_tr <<l10n>> {
+  * session_id : INT UNSIGNED <<PK, FK>>
+  * lang_code : VARCHAR(10) <<PK, FK>>
+  --
+  * topic : VARCHAR(160)
+}
+
+entity "enum_translations" as enum_tr <<l10n>> {
+  * enum_type : VARCHAR(40) <<PK>>
+  * enum_value : VARCHAR(20) <<PK>>
+  * lang_code : VARCHAR(10) <<PK, FK>>
+  --
+  * label : VARCHAR(80)
+  short_label : VARCHAR(8)
+}
+
+users ||--o{ courses : "teaches"
+courses ||--o{ sessions : "consists of"
+users ||--o{ enrollments : "enrolls"
+courses ||--o{ enrollments : "has"
+sessions ||--o{ attendances : "records"
+users ||--o{ attendances : "attends"
+
+courses ||--o{ course_tr : "translated as"
+sessions ||--o{ session_tr : "translated as"
+languages ||--o{ course_tr
+languages ||--o{ session_tr
+languages ||--o{ enum_tr
+
+note bottom of enum_tr
+  Labels for ENUM codes, keyed by column:
+  attendances.status, enrollments.status, users.role.
+  Views v_courses_i18n, v_sessions_i18n and
+  v_attendance_i18n join these with a fallback
+  to the original text / default language.
+end note
+@enduml

@@ -1,6 +1,7 @@
 import { getCurrentUser, clearSession } from "./store.js";
 import { logout } from "./api.js";
 import { escapeHtml } from "./html.js";
+import { redirectFor } from "./route-guard.js";
 import { LANGUAGES, initI18n, setLanguage, getLanguage } from "./i18n.js";
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
@@ -22,6 +23,7 @@ const routes = {
   "/teacher/attendance": { render: renderTeacherAttendance, role: "teacher" },
 };
 
+/** @param {string} path e.g. "/teacher"; changes the hash, which re-routes */
 export function navigate(path) {
   location.hash = "#" + path;
 }
@@ -37,24 +39,15 @@ function renderHeader(user) {
 // polling interval); the router calls it right before leaving that page.
 let currentCleanup = null;
 
+// renders the page for the current hash, or redirects (see route-guard.js)
 async function route() {
   const [path, query] = location.hash.slice(1).split("?");
   const params = new URLSearchParams(query);
   const match = routes[path];
   const user = getCurrentUser();
 
-  // unknown or empty path (including the very first load, which has no
-  // hash at all): redirect to a canonical route so the url always matches
-  // what's on screen.
-  if (!match) {
-    return navigate(user ? `/${user.role}` : "/login");
-  }
-  if (match.role && (!user || user.role !== match.role)) {
-    return navigate(user ? `/${user.role}` : "/login");
-  }
-  if (!match.role && user && (path === "/login" || path === "/register")) {
-    return navigate(`/${user.role}`);
-  }
+  const redirect = redirectFor(path, match, user);
+  if (redirect) return navigate(redirect);
 
   if (currentCleanup) currentCleanup();
   renderHeader(user);

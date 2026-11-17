@@ -1,0 +1,142 @@
+@startuml class-diagram
+' UML class diagram of the backend (server/src/main/java/attendance_tracker/server).
+' Render: plantuml -tpng -tsvg docs/diagrams/class-diagram.puml
+
+skinparam shadowing false
+skinparam defaultFontName Sans
+skinparam classAttributeIconSize 0
+title Backend — UML class diagram
+
+package "attendance_tracker.server" {
+
+  class App <<final>> {
+    {static} DEFAULT_PORT : int = 3000
+    {static} +main(args : String[])
+    {static} ~resolvePort(env : String) : int
+  }
+
+  class "server" as Srv <<final>> {
+    {static} DEFAULT_CORS_ORIGINS : String
+    {static} +create(db : ConnectionSource) : Javalin
+    {static} ~create(db, clock, bcryptCost, corsOrigins) : Javalin
+    {static} ~corsOrigins(env : String) : List<String>
+    {static} ~body(ctx, type : Class<T>) : T
+    {static} ~pathId(ctx, name, notFoundMessage) : long
+  }
+
+  class Database <<final>> {
+    {static} +connect() : MariaDbPoolDataSource
+    {static} +connect(url, user, password) : MariaDbPoolDataSource
+    {static} ~verify(url, user, source)
+    {static} ~closeQuietly(resource)
+    {static} ~orDefault(value, default) : String
+  }
+
+  interface "Database.ConnectionSource" as ConnectionSource <<functional>> {
+    +open() : Connection
+  }
+
+  class Auth <<final>> {
+    {static} TOKEN_TTL : Duration = 12 h
+    -tokens : Map<String, Entry>
+    -clock : Clock
+    ~issue(p : Principal) : String
+    ~revoke(ctx)
+    ~require(ctx, roles : String...) : Principal
+  }
+
+  class "Auth.Principal" as Principal <<record>> {
+    userId : long
+    role : String
+  }
+
+  class Passwords <<final>> {
+    {static} DEFAULT_COST : int = 12
+    {static} MAX_BYTES : int = 72
+    ~hash(password) : String
+    ~verify(password, hash) : boolean
+    ~burnTime()
+    {static} ~fitsLimit(password) : boolean
+  }
+
+  class ApiError <<final>> {
+    status : int
+    {static} badRequest(msg) : ApiError
+    {static} unauthorized(msg) : ApiError
+    {static} forbidden() : ApiError
+    {static} notFound(msg) : ApiError
+    {static} conflict(msg) : ApiError
+  }
+
+  class AuthApi <<final>> {
+    ~register(ctx)
+    ~login(ctx)
+    ~logout(ctx)
+    {static} ~userFrom(rs) : UserDto
+    {static} ~exists(c, sql, params...) : boolean
+    {static} ~generatedId(ps) : long
+  }
+
+  class CourseApi <<final>> {
+    {static} DEFAULT_COURSE_MONTHS : int = 4
+    {static} MAX_STUDENT_LIMIT : int = 50
+    ~listStudents(ctx)
+    ~listCourses(ctx)
+    ~createCourse(ctx)
+    ~getCourse(ctx)
+    {static} ~teacherCourseName(c, courseId, teacherId) : String
+    {static} ~studentCourseName(c, courseId, studentId) : String
+    {static} ~enrolledStudents(c, courseId) : List<UserDto>
+  }
+
+  class SessionApi <<final>> {
+    {static} CODE_TTL : Duration = 15 min
+    {static} CODE_SPACE : int = 100
+    ~start(ctx)
+    ~get(ctx)
+    ~end(ctx)
+    ~confirm(ctx)
+    ~markManually(ctx)
+  }
+
+  class AttendanceApi <<final>> {
+    ~get(ctx)
+    ~export(ctx)
+    {static} ~fileName(courseName) : String
+  }
+
+  class "AuthApi.UserDto" as UserDto <<record>> {
+    id : long
+    name : String
+    email : String
+    role : String
+  }
+}
+
+class RuntimeException
+ApiError -up-|> RuntimeException
+
+App ..> Database : connect()
+App ..> Srv : create()
+Srv ..> AuthApi : routes
+Srv ..> CourseApi : routes
+Srv ..> SessionApi : routes
+Srv ..> AttendanceApi : routes
+Srv ..> ApiError : maps to JSON
+
+AuthApi --> ConnectionSource
+AuthApi --> Auth
+AuthApi --> Passwords
+CourseApi --> ConnectionSource
+CourseApi --> Auth
+SessionApi --> ConnectionSource
+SessionApi --> Auth
+AttendanceApi --> ConnectionSource
+AttendanceApi --> Auth
+
+Auth *-- Principal
+AttendanceApi ..> CourseApi : course lookups
+SessionApi ..> CourseApi : enrolledStudents()
+CourseApi ..> UserDto
+Database +-- ConnectionSource
+@enduml

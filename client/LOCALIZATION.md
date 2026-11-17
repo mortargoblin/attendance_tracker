@@ -37,6 +37,8 @@ so localization uses two pieces:
 | `setLanguage(code)` | Loads that language and saves the choice. Sets `<html lang dir>` and `document.title`, and re-translates the static `data-i18n` elements in `index.html`. |
 | `t(key, params)` | Looks the key up in the current language, then English, then returns the key itself, so a missing string is visible. `{name}` placeholders are filled from `params`, and numbers are formatted for the locale. If the entry is an object of plural forms, `params.count` chooses the form. |
 | `formatNumber(n, opts)`, `formatPercent(ratio)`, `formatDate(ms, opts)`, `formatTime(ms)` | Thin wrappers around `Intl` that use the current language. |
+| `formatCountdown(ms)` | Remaining time as `m:ss` in the language's digits (the session countdown). |
+| `toAsciiDigits(value)` | Turns Persian/Arabic-Indic digits typed by the user into `0â€“9`. |
 | `translateServerError(message)` | The backend replies in English. Known messages are mapped to `server.*` keys, and unknown ones are shown as they are. `api.js` calls this, so `err.message` is always already translated. |
 | `LANGUAGES` | The supported languages: each language's name in that language, and its text direction. |
 
@@ -90,17 +92,22 @@ the attendance table sits on the right and the Total column on the left. The "â†
 `rtl:-scale-x-100` (mirrored), so it points the right way. Emails, the code display and the code input are
 marked `dir="ltr"`.
 
+## Database content
+
+The UI strings above live in the client. Text stored in the database, such as course names, session topics
+and status/role labels, is localized with translation tables (`database_localization.sql`). `api.js` sends
+the UI language to the backend as `Accept-Language`. See
+[`docs/database-localization.md`](../docs/database-localization.md).
+
 ## Adding a language
 
 1. Copy `locales/en.json` to `locales/<code>.json` and translate the values. Keep the keys, the
    `{placeholders}` and the plural form names. Add any extra forms the language needs (see the
    [CLDR plural rules](https://www.unicode.org/cldr/charts/latest/supplemental/language_plural_rules.html)).
 2. Add `<code>: { name: "<native name>", dir: "ltr" | "rtl" }` to `LANGUAGES` in `js/i18n.js`.
-3. Check that the key sets match:
-
-   ```sh
-   node -e 'const f=require("fs"),en=Object.keys(JSON.parse(f.readFileSync("locales/en.json")));for(const l of f.readdirSync("locales")){const k=Object.keys(JSON.parse(f.readFileSync("locales/"+l)));console.log(l,en.filter(x=>!k.includes(x)))}'
-   ```
+3. Run `npm test`. `test/locales.test.js` checks that every locale file has exactly the English keys,
+   no empty strings, the same `{placeholders}`, and every plural form `Intl.PluralRules` needs for it.
+4. Add a row to the `languages` table (and its labels to `enum_translations`) in `database_localization.sql`.
 
 ## Adding a string
 

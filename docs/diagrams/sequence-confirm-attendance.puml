@@ -1,0 +1,49 @@
+@startuml sequence-confirm-attendance
+' Main use case: teacher starts a session, student confirms with the code.
+' Render: plantuml -tpng -tsvg docs/diagrams/sequence-confirm-attendance.puml
+
+skinparam shadowing false
+skinparam defaultFontName Sans
+autonumber
+title Start a session and confirm attendance with a code
+
+actor Teacher
+participant "teacher-session.js" as TS
+actor Student
+participant "student-confirm.js" as SC
+participant "api.js" as API
+participant "SessionApi" as S
+participant "Auth" as A
+database "MariaDB" as DB
+
+Teacher -> API : startAttendanceSession(courseId)
+API -> S : POST /api/courses/{id}/sessions
+S -> A : require(ctx, "teacher")
+S -> DB : course belongs to teacher?
+S -> DB : free code among active sessions,\nINSERT sessions (code, expires = now + 15 min)
+S --> API : 201 { id, code, status: "active", expiresAt }
+API --> TS : session
+TS -> Teacher : shows the code and a countdown
+
+loop every 2 s while active
+  TS -> API : getSessionStatus(id)
+  API -> S : GET /api/sessions/{id}
+  S --> TS : confirmations so far
+end
+
+Student -> SC : types the code (Persian digits become 0-9)
+SC -> API : confirmAttendanceByCode(courseId, "42")
+API -> S : POST /api/courses/{id}/attendance/confirm
+S -> A : require(ctx, "student")
+S -> DB : enrolled? active session with this code?
+alt code matches and has not expired
+  S -> DB : INSERT/UPDATE attendances (PRESENT, via CODE)
+  S --> API : 200 { courseName, confirmedAt, alreadyConfirmed }
+  API --> SC : result
+  SC -> Student : "You're marked present" (in the UI language)
+else expired or wrong code
+  S --> API : 400 { error: "This code has expired." }
+  API --> SC : Error(translated message)
+  SC -> Student : error in the UI language
+end
+@enduml

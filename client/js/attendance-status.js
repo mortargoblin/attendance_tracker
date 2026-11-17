@@ -12,9 +12,14 @@ const CLASSES = {
   excused: "bg-sky-100 text-sky-800",
 };
 
+/** every status, in legend order */
 export const STATUSES = Object.keys(CLASSES);
 
 // unknown statuses are shown as absent
+/**
+ * @param {string} status as sent by the backend, e.g. "late"
+ * @returns {{ label: string, short: string, classes: string }}
+ */
 export function badge(status) {
   if (!(status in CLASSES)) status = "absent";
   return { label: t(`status.${status}.label`), short: t(`status.${status}.short`), classes: CLASSES[status] };

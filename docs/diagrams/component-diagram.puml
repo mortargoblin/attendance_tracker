@@ -1,0 +1,52 @@
+@startuml component-diagram
+' Components and deployment: browser SPA, REST backend, MariaDB, CI.
+' Render: plantuml -tpng -tsvg docs/diagrams/component-diagram.puml
+
+skinparam shadowing false
+skinparam defaultFontName Sans
+title Attendance Tracker — components and deployment
+
+node "Browser" {
+  package "client/ (static files, served on :1337)" {
+    [index.html] as html
+    [router.js\n+ route-guard.js] as router
+    [pages/*.js\n(one module per route)] as pages
+    [ui.js / html.js /\nattendance-status.js] as ui
+    [i18n.js\n(Intl API + t())] as i18n
+    [api.js\n(fetch, Accept-Language)] as api
+    [store.js\n(sessionStorage)] as store
+    folder "locales/*.json\n(en fi fa ja ru mn)" as locales
+  }
+}
+
+node "Docker: server (:3000)" {
+  [Javalin REST API\nAuthApi · CourseApi ·\nSessionApi · AttendanceApi] as rest
+  [Auth (tokens)\nPasswords (bcrypt)] as sec
+  [Database\n(MariaDB pool)] as pool
+}
+
+node "Docker: db (MariaDB 11, utf8mb4)" {
+  database "attendance_tracker" {
+    [core tables\nusers · courses · sessions ·\nenrollments · attendances] as core
+    [localization\nlanguages · *_translations ·\nenum_translations · v_*_i18n] as l10n
+  }
+}
+
+node "Jenkins" {
+  [Pipeline: build → test →\ncoverage (JaCoCo) → package →\ndocker build] as ci
+}
+
+html --> router
+router --> pages
+pages --> ui
+pages --> i18n
+pages --> api
+api --> store
+i18n --> locales
+api --> rest : HTTPS/JSON\nBearer token
+rest --> sec
+rest --> pool
+pool --> core : JDBC (utf8mb4)
+pool ..> l10n : planned: SELECT ... WHERE lang_code = ?
+ci ..> rest : builds & tests
+@enduml

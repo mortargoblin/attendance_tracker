@@ -28,7 +28,8 @@ Reasoning behind the technologies: We chose to use the technologies that the lec
 | Frontend | Vanilla JavaScript (ES modules, hash router), Tailwind CSS 4, `serve` |
 | Testing | JUnit 5.12.2, H2 2.3.232 (in-memory, `MODE=MariaDB`), fastexcel-reader, JaCoCo 0.8.13 |
 | CI/CD & deployment | Jenkins (declarative `Jenkinsfile`), Docker (multi-stage `server/Dockerfile`), Docker Compose |
-| Localization | ECMAScript `Intl` API + a small custom `t()` lookup with JSON files per language (no library). UI in English, Finnish, Farsi (RTL), Japanese, Russian and Mongolian, see [`client/LOCALIZATION.md`](client/LOCALIZATION.md). |
+| Localization | ECMAScript `Intl` API + a small custom `t()` lookup with JSON files per language (no library). UI in English, Finnish, Farsi (RTL), Japanese, Russian and Mongolian, see [`client/LOCALIZATION.md`](client/LOCALIZATION.md). Database: utf8mb4 + translation tables, see [Database localization](#database-localization). |
+| Client quality | `node --test` unit tests, ESLint 9 (`client/eslint.config.js`) |
 
 ## Design & development methodology
 
@@ -51,18 +52,24 @@ Browser (client/)  --HTTP/JSON-->  REST API (server/, Javalin)  --JDBC-->  Maria
   the tests swap in H2 or a fake connection. A `Clock` is injected as well, so tests can control code
   expiry.
 
-**UML and ER design.**
-- Use case diagram: `Documents/käyttötapauskaavio.png`.
-- ER model, implemented in `attendance_tracker_v2.sql`:
+**UML and ER design.** All diagrams are in [`docs/diagrams/`](docs/diagrams/) (PlantUML source + PNG/SVG):
+[ER diagram](docs/diagrams/er-diagram.png), [class diagram](docs/diagrams/class-diagram.png),
+[component/deployment diagram](docs/diagrams/component-diagram.png),
+[sequence diagram](docs/diagrams/sequence-confirm-attendance.png) and the
+[use case diagram](docs/diagrams/use-case-diagram.png).
+- ER model, implemented in `attendance_tracker_v2.sql` (+ `database_localization.sql`, see below):
   - `users` (role: STUDENT/TEACHER/ADMIN), with one teacher per course: `users 1–N courses`.
   - `courses 1–N sessions`. `sessions` is a weak entity, keyed by `(course_id, seq_no)`.
   - `users N–M courses` through `enrollments`.
   - `users N–M sessions` through `attendances` (status PRESENT/LATE/ABSENT/EXCUSED).
   - Foreign keys, unique keys and `CHECK` constraints enforce integrity in the database itself.
+  - Localization: `languages 1–N course_translations / session_translations / enum_translations`.
 
 **Development process.** We worked in Scrum sprints. The vision and backlog are in
 `Documents/productvision.docx` and `Documents/InitialProductBacklog.docx`, and each sprint ended with a
-review (`Documents/sprint1review.docx`, `spint2review.pdf`, `sprint3review.pdf`). Work was version-controlled
+review (`Documents/sprint1review.docx`, `spint2review.pdf`, `sprint3review.pdf`, `sprint5review.docx`,
+[`docs/sprint6-report.md`](docs/sprint6-report.md)). The acceptance test plan is in
+[`docs/acceptance-test-plan.md`](docs/acceptance-test-plan.md). Work was version-controlled
 in Git. Every commit is built and tested automatically by the Jenkins pipeline described below.
 
 ## Functional testing
@@ -82,6 +89,11 @@ in Git. Every commit is built and tested automatically by the Jenkins pipeline d
 - `DatabaseTest` and `AppTest` (including parameterized cases): configuration defaults, connection handling and
   port parsing.
 
+The client has its own unit tests in `client/test/`, run with Node's built-in test runner (`cd client && npm test`,
+no dependencies): i18n (plural rules, placeholders, locale digits, server error translation), consistency
+of every `locales/*.json` file with English, the routing/role rules, and the page logic that has no DOM.
+`npm run lint` runs ESLint with the rules in `client/eslint.config.js`.
+
 **Evidence.** `./mvnw clean verify` runs the whole suite. It writes JUnit reports to
 `server/target/surefire-reports/` and a JaCoCo coverage report to
 `server/target/site/jacoco/index.html`. The build fails if line or branch coverage falls below 75%.
@@ -94,7 +106,7 @@ browser and demonstrated in the sprint reviews.
 Prerequisites: JDK 21+, Node.js, and MariaDB (or Docker; see below). On Windows, `start.bat`
 builds the backend and starts both the backend and the frontend in one step.
 
-1. Load `attendance_tracker_v2.sql` into MariaDB.
+1. Load `attendance_tracker_v2.sql`, then `database_localization.sql` (and optionally `demo_data.sql`) into MariaDB.
 2. Start the backend from `server/`: `./mvnw package` then `java -jar target/attendance-tracker-server.jar`.
    Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (default 3000) and
    `CORS_ORIGINS` (comma separated frontend origins, default `http://127.0.0.1:1337,http://localhost:1337`).
@@ -114,7 +126,8 @@ docker compose up -d --build
 ```
 
 This starts:
-- `db` — MariaDB 11, seeded from `attendance_tracker_v2.sql`, exposed on host port `3307`.
+- `db` — MariaDB 11 (utf8mb4), seeded from `attendance_tracker_v2.sql`, `database_localization.sql` and
+  `demo_data.sql`, exposed on host port `3307`.
 - `server` — the Javalin backend built from `server/Dockerfile`, exposed on host port `3000`.
 
 Then serve the frontend as usual (`cd client && npm run serve`) and open http://127.0.0.1:1337.
@@ -207,6 +220,35 @@ Run it locally first to sanity-check the same commands the pipeline uses:
 cd server
 ./mvnw clean verify
 ```
+
+## Database localization
+
+Sprint 6 extends localization from the UI into the database. Full plan, design choices and validation results:
+[`docs/database-localization.md`](docs/database-localization.md).
+
+**Method: translation tables with fallback.** Language-neutral data stays as it is: ENUM codes like `PRESENT`,
+dates and numbers. Text that people read is translated in separate tables keyed by `(entity id, lang_code)`.
+This is created by [`database_localization.sql`](database_localization.sql), an additive migration that
+leaves the existing tables and backend queries unchanged.
+
+| Object | Purpose |
+| --- | --- |
+| `languages` | The six UI languages (`en` default, `fi`, `fa`, `ja`, `ru`, `mn`), with text direction (fa = RTL) and the collation that sorts each correctly (fi → `utf8mb4_swedish_ci`) |
+| `course_translations`, `session_translations` | Course name/description and session topic per language. The original column keeps the text as typed |
+| `enum_translations` | Labels for ENUM values (`attendances.status`, `enrollments.status`, `users.role`) in every language |
+| `v_courses_i18n`, `v_sessions_i18n`, `v_attendance_i18n` | Every row × every language, using `COALESCE(translation, original)`. Query with `WHERE lang_code = ?` |
+
+**Encoding.** UTF-8 (`utf8mb4`, which also holds 4-byte characters such as emoji) at every layer: MariaDB
+server flags in `docker-compose.yml`, database and table defaults, `SET NAMES utf8mb4` in the SQL scripts,
+MariaDB Connector/J, and UTF-8 JSON to the browser.
+
+**Language selection.** The client sends the UI language with every request (`Accept-Language: fi, en;q=0.5`),
+so the backend can bind it to `lang_code` in the views. Dates and numbers are stored language-neutral and
+formatted in the browser with `Intl`.
+
+**Validation.** [`docs/database-localization-validation.sql`](docs/database-localization-validation.sql) checks the
+charsets, multi-byte storage, 4-byte round trip, retrieval and fallback in every language, label completeness,
+non-Latin search and per-locale sorting. All checks pass (results in the report).
 
 ## API
 

@@ -1,6 +1,12 @@
 services:
   db:
     image: mariadb:11
+    # UTF-8 (utf8mb4) as the server default for new databases, tables and connections.
+    # The backend's MariaDB Connector/J 3.x always talks utf8mb4, and the SQL scripts
+    # start with SET NAMES utf8mb4, so every path into the database is UTF-8.
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: attendance_tracker
@@ -9,6 +15,8 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./attendance_tracker_v2.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      # init scripts run in name order: schema.sql, then this, then the demo data
+      - ./database_localization.sql:/docker-entrypoint-initdb.d/y_localization.sql:ro
       - ./demo_data.sql:/docker-entrypoint-initdb.d/zz_demo_data.sql:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]

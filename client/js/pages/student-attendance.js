@@ -2,7 +2,29 @@ import * as api from "../api.js";
 import { escapeHtml } from "../html.js";
 import { badge } from "../attendance-status.js";
 import { t, formatDate, formatPercent } from "../i18n.js";
+import { backLink } from "../ui.js";
 
+const DATE_FORMAT = { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" };
+
+/** one session in the list: its number, date and the student's status badge */
+function sessionRow(session, status) {
+  const b = badge(status);
+  return `
+    <li class="flex items-center justify-between gap-4 py-3">
+      <div>
+        <p class="font-medium text-slate-900">${t("common.sessionNumber", { n: session.seqNo })}</p>
+        <p class="text-sm text-slate-500">${escapeHtml(formatDate(session.startedAt, DATE_FORMAT))}</p>
+      </div>
+      <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${b.classes}">${b.label}</span>
+    </li>
+  `;
+}
+
+/**
+ * a student's own attendance in one course, newest session first.
+ * @param {HTMLElement} container
+ * @param {URLSearchParams} params courseId
+ */
 export async function renderStudentAttendance(container, params) {
   const courseId = params.get("courseId");
   // for a student the report only holds their own row
@@ -11,29 +33,17 @@ export async function renderStudentAttendance(container, params) {
   const me = report.students[0];
   if (!me) throw new Error(t("server.courseNotFound"));
 
-  const dateFormat = { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" };
   const ratio = sessions.length === 0 ? 0 : me.attended / sessions.length;
 
   // newest first, so the session they just confirmed is at the top
   const rows = sessions
     .map((session, i) => ({ session, status: me.statuses[i] }))
     .reverse()
-    .map(({ session, status }) => {
-      const b = badge(status);
-      return `
-        <li class="flex items-center justify-between gap-4 py-3">
-          <div>
-            <p class="font-medium text-slate-900">${t("common.sessionNumber", { n: session.seqNo })}</p>
-            <p class="text-sm text-slate-500">${escapeHtml(formatDate(session.startedAt, dateFormat))}</p>
-          </div>
-          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${b.classes}">${b.label}</span>
-        </li>
-      `;
-    })
+    .map(({ session, status }) => sessionRow(session, status))
     .join("");
 
   container.innerHTML = `
-    <a href="#/student" class="text-sm text-indigo-600 hover:underline"><span class="inline-block rtl:-scale-x-100">&larr;</span> ${t("common.backToCourses")}</a>
+    ${backLink("#/student")}
     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-4">
       <h1 class="text-xl font-bold text-slate-900">${escapeHtml(report.courseName)}</h1>
       ${
