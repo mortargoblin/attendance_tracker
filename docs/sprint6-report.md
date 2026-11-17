@@ -127,9 +127,8 @@ Regenerate after a change: `plantuml -tpng -tsvg docs/diagrams/*.puml`.
 
 | Team member | Assigned tasks | Time spent (hrs) | In-class tasks |
 | --- | --- | :-: | --- |
-| Sampo Westman | 1. Database localization | _6 (planned)_ | _Submitted / Not submitted_ |
-| Aaro Saarinen | 2. Static code review, 4. Acceptance test plan | _5 + 3 (planned)_ | _Submitted / Not submitted_ |
-| Tom Laukkanen | 3. Code clean-up and refactoring, 5. Architecture docs | _5 + 2 (planned)_ | _Submitted / Not submitted_ |
+| Aaro Saarinen | 2. Static code review, 4. Acceptance test plan, DB localization | 3 | _Submitted_ |
+| Tom Laukkanen | 3. Code clean-up and refactoring, 5. Architecture docs | 2 | _Submitted_ |
 
 *Hours are the estimates from the sprint plan. Replace them with the actual hours, and fill in the in-class task status, before the review.*
 
