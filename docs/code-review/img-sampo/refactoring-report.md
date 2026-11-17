@@ -10,3 +10,9 @@
 
 - The inline object default moved to the constant `DEFAULT_DATE_OPTIONS`.
 - The default values are the same, so the output is unchanged.
+
+# Running SonarQube
+
+ - Screenshots showing before and after the refactoring 
+ - 2 reliability issues fixed
+ - No new issues
