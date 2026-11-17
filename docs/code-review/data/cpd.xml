@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><pmd-cpd pmdVersion="7.29.0" timestamp="2026-11-17T09:38:22.1771453+02:00" version="1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://pmd-code.org/schema/cpd-report https://pmd.github.io/schema/cpd-report_1_0_0.xsd" xmlns="https://pmd-code.org/schema/cpd-report">
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\ApiError.java" totalNumberOfTokens="118"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\App.java" totalNumberOfTokens="161"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\AttendanceApi.java" totalNumberOfTokens="1519"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\Auth.java" totalNumberOfTokens="385"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\AuthApi.java" totalNumberOfTokens="1172"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\CourseApi.java" totalNumberOfTokens="1884"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\Database.java" totalNumberOfTokens="293"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\Passwords.java" totalNumberOfTokens="167"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\SessionApi.java" totalNumberOfTokens="1961"/>
+    <file path="C:\Users\tomwl\OneDrive\Työpöytä\ProjAttTrack\server\src\main\java\attendance_tracker\server\server.java" totalNumberOfTokens="800"/>
+</pmd-cpd>

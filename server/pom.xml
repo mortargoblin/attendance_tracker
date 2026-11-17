@@ -32,6 +32,9 @@
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
     <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <jacoco.version>0.8.13</jacoco.version>
+    <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
+    <!-- Newer than the plugin's default PMD so it can read class files of current JDKs -->
+    <pmd.version>7.29.0</pmd.version>
   </properties>
 
   <dependencies>
@@ -176,6 +179,38 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- Static code review metrics (Sprint 6). Not bound to a phase, so it never slows down or
+           fails the normal build. `./mvnw compile pmd:pmd` writes per-method cyclomatic/cognitive
+           complexity and NCSS to target/pmd.xml; `./mvnw pmd:cpd` finds duplicated code
+           (target/cpd.xml). See docs/code-review/. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${maven-pmd-plugin.version}</version>
+        <configuration>
+          <rulesets>
+            <ruleset>${project.basedir}/config/pmd-metrics.xml</ruleset>
+          </rulesets>
+          <targetJdk>21</targetJdk>
+          <format>xml</format>
+          <linkXRef>false</linkXRef>
+          <minimumTokens>50</minimumTokens>
+          <printFailingErrors>false</printFailingErrors>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>net.sourceforge.pmd</groupId>
+            <artifactId>pmd-core</artifactId>
+            <version>${pmd.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>net.sourceforge.pmd</groupId>
+            <artifactId>pmd-java</artifactId>
+            <version>${pmd.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
       <!-- Builds a runnable fat jar: java -jar target/attendance-tracker-server.jar -->

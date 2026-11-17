@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PMD ruleset used only to collect per-method code metrics for the static code review
+  (docs/code-review/). Every report level is 1, so PMD reports a value for EVERY method and
+  class instead of only the ones over a threshold. The results are therefore metrics, not
+  violations, and this ruleset is not used to fail the build.
+
+  Run from server/:  ./mvnw compile pmd:pmd   (writes target/pmd.xml)
+-->
+<ruleset name="metrics"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>Per-method cyclomatic complexity, cognitive complexity and NCSS.</description>
+
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="1"/>
+      <property name="classReportLevel" value="1"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="1"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <property name="methodReportLevel" value="1"/>
+      <property name="classReportLevel" value="1"/>
+    </properties>
+  </rule>
+</ruleset>

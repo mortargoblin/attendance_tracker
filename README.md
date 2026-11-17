@@ -101,6 +101,31 @@ Jenkins runs the same command on every new commit and publishes the test results
 trend for each build (see *CI/CD with Jenkins*). Each sprint's features were also tested by hand in the
 browser and demonstrated in the sprint reviews.
 
+## Static code analysis
+
+The code is analysed with **SonarQube** and **SonarScanner**. **PMD** (Java) and **ESLint**
+(JavaScript) provide per-method complexity and length metrics. The full Sprint 6 Statistical Code
+Review Report has the metrics, charts, SonarQube screenshots, triaged issues and refactoring
+recommendations: [`docs/code-review/README.md`](docs/code-review/README.md).
+
+Latest results (17 Nov 2026): quality gate **passed**, 2,045 lines of code, 0 % duplication,
+10 open issues (5 bugs, 2 vulnerabilities that were reviewed as false positive / safe, 3 code
+smells), 1 Java method over a cyclomatic complexity of 10.
+
+Run it locally:
+
+```
+docker compose -f docker-compose.sonar.yml up -d          # SonarQube on http://localhost:9000
+cd server && ./mvnw clean verify pmd:pmd pmd:cpd dependency:copy-dependencies -DincludeScope=test && cd ..
+docker run --rm -e SONAR_HOST_URL=http://host.docker.internal:9000 -e SONAR_TOKEN=<token> -v "$(pwd):/usr/src" sonarsource/sonar-scanner-cli
+```
+
+- `sonar-project.properties`: scanner settings (sources, compiled classes, JaCoCo coverage report).
+- `server/config/pmd-metrics.xml`: PMD ruleset that reports complexity and size for every method.
+  It is not bound to the build, so it never fails `mvnw verify`.
+- `docs/code-review/scripts/collect_metrics.py`: turns the PMD, ESLint and SonarQube output into
+  the report's tables and charts.
+
 ## Running locally
 
 Prerequisites: JDK 21+, Node.js, and MariaDB (or Docker; see below). On Windows, `start.bat`

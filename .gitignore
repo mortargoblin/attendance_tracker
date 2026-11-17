@@ -1,0 +1,3 @@
+# Local SonarQube credentials and SonarScanner work directory
+.sonar-local.env
+.scannerwork/

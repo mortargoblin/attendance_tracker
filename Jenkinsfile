@@ -102,6 +102,38 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            // Static code analysis (Sprint 6). Optional: needs the "SonarQube Scanner" plugin, a
+            // server named 'SonarQube' under Manage Jenkins > System (URL + token credential) and
+            // a SonarScanner installation named 'SonarScanner' under Manage Jenkins > Tools.
+            // If any of that is missing the stage is marked UNSTABLE but the build continues.
+            // Settings are read from sonar-project.properties; see docs/code-review/README.md.
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('server') {
+                        script {
+                            // sonar.java.libraries points at these jars
+                            if (isUnix()) {
+                                sh './mvnw -B -q dependency:copy-dependencies -DincludeScope=test'
+                            } else {
+                                bat 'mvnw.cmd -B -q dependency:copy-dependencies -DincludeScope=test'
+                            }
+                        }
+                    }
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        withSonarQubeEnv('SonarQube') {
+                            if (isUnix()) {
+                                sh "\"${scannerHome}/bin/sonar-scanner\""
+                            } else {
+                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\""
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Package') {
             steps {
                 dir('server') {

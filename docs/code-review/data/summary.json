@@ -1,0 +1,610 @@
+{
+  "java": {
+    "methods": 78,
+    "cyclomatic": {
+      "count": 78,
+      "mean": 2.77,
+      "median": 2.0,
+      "max": 23,
+      "p90": 6
+    },
+    "cognitive": {
+      "count": 78,
+      "mean": 1.6,
+      "median": 1.0,
+      "max": 14,
+      "p90": 5
+    },
+    "loc": {
+      "count": 78,
+      "mean": 12.47,
+      "median": 6.5,
+      "max": 61,
+      "p90": 30
+    },
+    "over_complexity_limit": [
+      {
+        "file": "AuthApi.java",
+        "class": "AuthApi",
+        "method": "register",
+        "line": 45,
+        "loc": 53,
+        "ncss": 38,
+        "cognitive": 14,
+        "cyclomatic": 23
+      }
+    ],
+    "over_loc_limit": [
+      {
+        "file": "AttendanceApi.java",
+        "class": "AttendanceApi",
+        "method": "load",
+        "line": 113,
+        "loc": 46,
+        "ncss": 29,
+        "cognitive": 6,
+        "cyclomatic": 6
+      },
+      {
+        "file": "AttendanceApi.java",
+        "class": "AttendanceApi",
+        "method": "workbook",
+        "line": 164,
+        "loc": 46,
+        "ncss": 37,
+        "cognitive": 6,
+        "cyclomatic": 5
+      },
+      {
+        "file": "AuthApi.java",
+        "class": "AuthApi",
+        "method": "register",
+        "line": 45,
+        "loc": 53,
+        "ncss": 38,
+        "cognitive": 14,
+        "cyclomatic": 23
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "listStudents",
+        "line": 60,
+        "loc": 37,
+        "ncss": 26,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "insertCourse",
+        "line": 193,
+        "loc": 34,
+        "ncss": 26,
+        "cognitive": 3,
+        "cyclomatic": 6
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "confirm",
+        "line": 151,
+        "loc": 44,
+        "ncss": 30,
+        "cognitive": 7,
+        "cyclomatic": 9
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "loadSession",
+        "line": 197,
+        "loc": 46,
+        "ncss": 34,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "server.java",
+        "class": "server",
+        "method": "create",
+        "line": 33,
+        "loc": 61,
+        "ncss": 33,
+        "cognitive": 5,
+        "cyclomatic": 1
+      }
+    ],
+    "top_cyclomatic": [
+      {
+        "file": "AuthApi.java",
+        "class": "AuthApi",
+        "method": "register",
+        "line": 45,
+        "loc": 53,
+        "ncss": 38,
+        "cognitive": 14,
+        "cyclomatic": 23
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "listStudents",
+        "line": 60,
+        "loc": 37,
+        "ncss": 26,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "createCourse",
+        "line": 105,
+        "loc": 28,
+        "ncss": 20,
+        "cognitive": 5,
+        "cyclomatic": 9
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "confirm",
+        "line": 151,
+        "loc": 44,
+        "ncss": 30,
+        "cognitive": 7,
+        "cyclomatic": 9
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "loadSession",
+        "line": 197,
+        "loc": 46,
+        "ncss": 34,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "Auth.java",
+        "class": "Auth",
+        "method": "require",
+        "line": 57,
+        "loc": 14,
+        "ncss": 10,
+        "cognitive": 6,
+        "cyclomatic": 8
+      },
+      {
+        "file": "AttendanceApi.java",
+        "class": "AttendanceApi",
+        "method": "load",
+        "line": 113,
+        "loc": 46,
+        "ncss": 29,
+        "cognitive": 6,
+        "cyclomatic": 6
+      },
+      {
+        "file": "AuthApi.java",
+        "class": "AuthApi",
+        "method": "login",
+        "line": 99,
+        "loc": 22,
+        "ncss": 17,
+        "cognitive": 3,
+        "cyclomatic": 6
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "insertCourse",
+        "line": 193,
+        "loc": 34,
+        "ncss": 26,
+        "cognitive": 3,
+        "cyclomatic": 6
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "freeCode",
+        "line": 245,
+        "loc": 23,
+        "ncss": 15,
+        "cognitive": 5,
+        "cyclomatic": 6
+      }
+    ],
+    "top_loc": [
+      {
+        "file": "server.java",
+        "class": "server",
+        "method": "create",
+        "line": 33,
+        "loc": 61,
+        "ncss": 33,
+        "cognitive": 5,
+        "cyclomatic": 1
+      },
+      {
+        "file": "AuthApi.java",
+        "class": "AuthApi",
+        "method": "register",
+        "line": 45,
+        "loc": 53,
+        "ncss": 38,
+        "cognitive": 14,
+        "cyclomatic": 23
+      },
+      {
+        "file": "AttendanceApi.java",
+        "class": "AttendanceApi",
+        "method": "load",
+        "line": 113,
+        "loc": 46,
+        "ncss": 29,
+        "cognitive": 6,
+        "cyclomatic": 6
+      },
+      {
+        "file": "AttendanceApi.java",
+        "class": "AttendanceApi",
+        "method": "workbook",
+        "line": 164,
+        "loc": 46,
+        "ncss": 37,
+        "cognitive": 6,
+        "cyclomatic": 5
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "loadSession",
+        "line": 197,
+        "loc": 46,
+        "ncss": 34,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "confirm",
+        "line": 151,
+        "loc": 44,
+        "ncss": 30,
+        "cognitive": 7,
+        "cyclomatic": 9
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "listStudents",
+        "line": 60,
+        "loc": 37,
+        "ncss": 26,
+        "cognitive": 8,
+        "cyclomatic": 9
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "insertCourse",
+        "line": 193,
+        "loc": 34,
+        "ncss": 26,
+        "cognitive": 3,
+        "cyclomatic": 6
+      },
+      {
+        "file": "SessionApi.java",
+        "class": "SessionApi",
+        "method": "start",
+        "line": 72,
+        "loc": 30,
+        "ncss": 23,
+        "cognitive": 1,
+        "cyclomatic": 3
+      },
+      {
+        "file": "CourseApi.java",
+        "class": "CourseApi",
+        "method": "createCourse",
+        "line": 105,
+        "loc": 28,
+        "ncss": 20,
+        "cognitive": 5,
+        "cyclomatic": 9
+      }
+    ],
+    "cpd_duplications_50_tokens": []
+  },
+  "js": {
+    "functions": 92,
+    "cyclomatic": {
+      "count": 92,
+      "mean": 2.09,
+      "median": 1.0,
+      "max": 14,
+      "p90": 4
+    },
+    "loc": {
+      "count": 92,
+      "mean": 13.18,
+      "median": 4.0,
+      "max": 176,
+      "p90": 30
+    },
+    "over_complexity_limit": [
+      {
+        "file": "js/api.js",
+        "line": 23,
+        "function": "Async function 'send'",
+        "cyclomatic": 11,
+        "statements": 17,
+        "loc": 34
+      },
+      {
+        "file": "js/router.js",
+        "line": 40,
+        "function": "Async function 'route'",
+        "cyclomatic": 14,
+        "statements": 18,
+        "loc": 30
+      }
+    ],
+    "over_loc_limit": [
+      {
+        "file": "js/api.js",
+        "line": 23,
+        "function": "Async function 'send'",
+        "cyclomatic": 11,
+        "statements": 17,
+        "loc": 34
+      },
+      {
+        "file": "js/pages/login.js",
+        "line": 6,
+        "function": "Async function 'renderLogin'",
+        "cyclomatic": 1,
+        "statements": 3,
+        "loc": 37
+      },
+      {
+        "file": "js/pages/register.js",
+        "line": 6,
+        "function": "Async function 'renderRegister'",
+        "cyclomatic": 1,
+        "statements": 3,
+        "loc": 55
+      },
+      {
+        "file": "js/pages/student-attendance.js",
+        "line": 6,
+        "function": "Async function 'renderStudentAttendance'",
+        "cyclomatic": 4,
+        "statements": 9,
+        "loc": 49
+      },
+      {
+        "file": "js/pages/student-confirm.js",
+        "line": 11,
+        "function": "Async function 'renderConfirm'",
+        "cyclomatic": 2,
+        "statements": 8,
+        "loc": 46
+      },
+      {
+        "file": "js/pages/student-dashboard.js",
+        "line": 5,
+        "function": "Async function 'renderStudentDashboard'",
+        "cyclomatic": 2,
+        "statements": 4,
+        "loc": 31
+      },
+      {
+        "file": "js/pages/teacher-attendance.js",
+        "line": 6,
+        "function": "Async function 'renderTeacherAttendance'",
+        "cyclomatic": 3,
+        "statements": 15,
+        "loc": 117
+      },
+      {
+        "file": "js/pages/teacher-dashboard.js",
+        "line": 19,
+        "function": "Async function 'renderTeacherDashboard'",
+        "cyclomatic": 5,
+        "statements": 32,
+        "loc": 176
+      },
+      {
+        "file": "js/pages/teacher-session.js",
+        "line": 5,
+        "function": "Async function 'renderTeacherSession'",
+        "cyclomatic": 1,
+        "statements": 10,
+        "loc": 102
+      },
+      {
+        "file": "js/pages/teacher-session.js",
+        "line": 29,
+        "function": "Function 'render'",
+        "cyclomatic": 4,
+        "statements": 17,
+        "loc": 42
+      }
+    ],
+    "top_cyclomatic": [
+      {
+        "file": "js/router.js",
+        "line": 40,
+        "function": "Async function 'route'",
+        "cyclomatic": 14,
+        "statements": 18,
+        "loc": 30
+      },
+      {
+        "file": "js/api.js",
+        "line": 23,
+        "function": "Async function 'send'",
+        "cyclomatic": 11,
+        "statements": 17,
+        "loc": 34
+      },
+      {
+        "file": "js/i18n.js",
+        "line": 56,
+        "function": "Async function 'setLanguage'",
+        "cyclomatic": 7,
+        "statements": 10,
+        "loc": 19
+      },
+      {
+        "file": "js/i18n.js",
+        "line": 81,
+        "function": "Function 't'",
+        "cyclomatic": 7,
+        "statements": 5,
+        "loc": 12
+      },
+      {
+        "file": "js/i18n.js",
+        "line": 33,
+        "function": "Function 'initialLanguage'",
+        "cyclomatic": 6,
+        "statements": 7,
+        "loc": 13
+      },
+      {
+        "file": "js/api.js",
+        "line": 91,
+        "function": "Async function 'listStudents'",
+        "cyclomatic": 5,
+        "statements": 5,
+        "loc": 7
+      },
+      {
+        "file": "js/pages/teacher-dashboard.js",
+        "line": 19,
+        "function": "Async function 'renderTeacherDashboard'",
+        "cyclomatic": 5,
+        "statements": 32,
+        "loc": 176
+      },
+      {
+        "file": "js/pages/teacher-dashboard.js",
+        "line": 83,
+        "function": "Async arrow function",
+        "cyclomatic": 5,
+        "statements": 13,
+        "loc": 20
+      },
+      {
+        "file": "js/pages/student-attendance.js",
+        "line": 6,
+        "function": "Async function 'renderStudentAttendance'",
+        "cyclomatic": 4,
+        "statements": 9,
+        "loc": 49
+      },
+      {
+        "file": "js/pages/teacher-dashboard.js",
+        "line": 109,
+        "function": "Arrow function",
+        "cyclomatic": 4,
+        "statements": 5,
+        "loc": 8
+      }
+    ],
+    "top_loc": [
+      {
+        "file": "js/pages/teacher-dashboard.js",
+        "line": 19,
+        "function": "Async function 'renderTeacherDashboard'",
+        "cyclomatic": 5,
+        "statements": 32,
+        "loc": 176
+      },
+      {
+        "file": "js/pages/teacher-attendance.js",
+        "line": 6,
+        "function": "Async function 'renderTeacherAttendance'",
+        "cyclomatic": 3,
+        "statements": 15,
+        "loc": 117
+      },
+      {
+        "file": "js/pages/teacher-session.js",
+        "line": 5,
+        "function": "Async function 'renderTeacherSession'",
+        "cyclomatic": 1,
+        "statements": 10,
+        "loc": 102
+      },
+      {
+        "file": "js/pages/register.js",
+        "line": 6,
+        "function": "Async function 'renderRegister'",
+        "cyclomatic": 1,
+        "statements": 3,
+        "loc": 55
+      },
+      {
+        "file": "js/pages/student-attendance.js",
+        "line": 6,
+        "function": "Async function 'renderStudentAttendance'",
+        "cyclomatic": 4,
+        "statements": 9,
+        "loc": 49
+      },
+      {
+        "file": "js/pages/student-confirm.js",
+        "line": 11,
+        "function": "Async function 'renderConfirm'",
+        "cyclomatic": 2,
+        "statements": 8,
+        "loc": 46
+      },
+      {
+        "file": "js/pages/teacher-session.js",
+        "line": 29,
+        "function": "Function 'render'",
+        "cyclomatic": 4,
+        "statements": 17,
+        "loc": 42
+      },
+      {
+        "file": "js/pages/login.js",
+        "line": 6,
+        "function": "Async function 'renderLogin'",
+        "cyclomatic": 1,
+        "statements": 3,
+        "loc": 37
+      },
+      {
+        "file": "js/api.js",
+        "line": 23,
+        "function": "Async function 'send'",
+        "cyclomatic": 11,
+        "statements": 17,
+        "loc": 34
+      },
+      {
+        "file": "js/pages/student-dashboard.js",
+        "line": 5,
+        "function": "Async function 'renderStudentDashboard'",
+        "cyclomatic": 2,
+        "statements": 4,
+        "loc": 31
+      }
+    ]
+  },
+  "limits": {
+    "cyclomatic": 10,
+    "loc": 30
+  }
+}
